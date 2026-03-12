@@ -112,7 +112,53 @@ def init_model(config: dict[str, Any]) -> Any:
             system_prompt=model_cfg.get("system_prompt"),
         )
 
-    raise ValueError("Unsupported model provider. Currently supported: qwen")
+    if provider == "openai":
+        from models.openai import load_openai
+
+        return load_openai(
+            model_id=str(model_cfg.get("model_id", "gpt-4.1-mini")),
+            api_key=model_cfg.get("api_key"),
+            max_new_tokens=int(model_cfg.get("max_new_tokens", 16)),
+            system_prompt=model_cfg.get("system_prompt"),
+            timeout=float(model_cfg.get("timeout", 60.0)),
+        )
+
+    if provider == "gemini":
+        from models.gemini import load_gemini
+
+        return load_gemini(
+            model_id=str(model_cfg.get("model_id", "gemini-2.0-flash")),
+            api_key=model_cfg.get("api_key"),
+            max_new_tokens=int(model_cfg.get("max_new_tokens", 16)),
+            system_prompt=model_cfg.get("system_prompt"),
+            temperature=float(model_cfg.get("temperature", 0.0)),
+        )
+
+    if provider == "llama":
+        from models.llama import load_llama
+
+        return load_llama(
+            model_id=str(model_cfg.get("model_id", "meta-llama/Llama-3.2-3B-Instruct")),
+            torch_dtype=str(model_cfg.get("torch_dtype", "auto")),
+            device_map=str(model_cfg.get("device_map", "auto")),
+            max_new_tokens=int(model_cfg.get("max_new_tokens", 16)),
+            system_prompt=model_cfg.get("system_prompt"),
+        )
+
+    if provider == "llava":
+        from models.llava import load_llava
+
+        return load_llava(
+            model_id=str(model_cfg.get("model_id", "llava-hf/llava-1.5-7b-hf")),
+            torch_dtype=str(model_cfg.get("torch_dtype", "auto")),
+            device_map=str(model_cfg.get("device_map", "auto")),
+            max_new_tokens=int(model_cfg.get("max_new_tokens", 16)),
+            system_prompt=model_cfg.get("system_prompt"),
+        )
+
+    raise ValueError(
+        "Unsupported model provider. Currently supported: qwen, openai, gemini, llama, llava"
+    )
 
 
 def parse_yes_no_prediction(raw_output: str) -> str:
