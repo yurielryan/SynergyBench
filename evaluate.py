@@ -14,7 +14,7 @@ from typing import Any
 
 import yaml
 
-from models.qwen import load_qwen_vl
+from generator_models.qwen import load_qwen_vl
 
 
 def load_config(config_path: str | Path) -> dict[str, Any]:
@@ -161,6 +161,7 @@ def init_model(config: dict[str, Any]) -> Any:
     )
 
 
+# TODO: refactor this function into ./evaluator_models/utils.py and make it a common utility for all evaluator models.
 def parse_yes_no_prediction(raw_output: str) -> str:
     output = raw_output.strip().lower()
     if output.startswith("yes"):
@@ -174,6 +175,7 @@ def parse_yes_no_prediction(raw_output: str) -> str:
     return "unknown"
 
 
+# TODO: Evaluate text, image, and multimodal need to use evaluator models.
 def evaluate_text(model: Any, dataset: dict[str, dict[str, Any]]) -> dict[str, str]:
     """Run text-only evaluation by calling model.inference(text=..., image=None)."""
     results: dict[str, str] = {}
@@ -182,7 +184,9 @@ def evaluate_text(model: Any, dataset: dict[str, dict[str, Any]]) -> dict[str, s
         if text is None:
             results[sample_id] = "unknown"
             continue
-        raw_output = model.inference(text=text, image=None)
+        raw_output = model.inference(
+            text=text, image=None
+        )  # TODO: change model to evaluator model
         results[sample_id] = parse_yes_no_prediction(raw_output)
     return results  # dictionary of sample_id: answer
 
@@ -207,7 +211,9 @@ def evaluate_image(
             results[sample_id] = "unknown"
             continue
 
-        raw_output = model.inference(text=None, image=image_path)
+        raw_output = model.inference(
+            text=None, image=image_path
+        )  # TODO: change model to evaluator model
         results[sample_id] = parse_yes_no_prediction(raw_output)
     return results
 
@@ -233,7 +239,9 @@ def evaluate_multimodal(
         #     results[sample_id] = "unknown"
         #     continue
 
-        raw_output = model.inference(text=text, image=image_path)
+        raw_output = model.inference(
+            text=text, image=image_path
+        )  # TODO: change model to evaluator model
         results[sample_id] = parse_yes_no_prediction(raw_output)
     return results
 
@@ -274,6 +282,7 @@ def run_evaluation(config_path: str | Path) -> dict[str, Any]:
     )
     image_dir = data_cfg.get("image_dir", "img")
 
+    # TODO: implement different evaluator models under ./evaluator_models: MLP, CLIP, BLIP2
     model = init_model(config)  # initialize vlm for inference
 
     # inference: text only, image only, and both
