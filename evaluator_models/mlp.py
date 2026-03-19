@@ -1,0 +1,1 @@
+# TODO: simple evaluator with a MLP that trains on the data set and produces yes/no output (baseline).
