@@ -7,7 +7,7 @@ Given text and image pairs, it runs three inference modes:
 - image-only
 - multimodal (text + image)
 
-The default backend is Qwen3-VL via Hugging Face Transformers.
+The default evaluator backend is OpenAI-compatible via OpenRouter.
 
 ## Benchmark Goal
 
@@ -64,32 +64,28 @@ Please follow DocMSU's license and usage terms when downloading and redistributi
 
 ## Repository Structure
 
-- `evaluate.py`: main evaluation entrypoint.
-- `curate_dataset.py`: deterministic split curation script.
-- `models/qwen.py`: Qwen3-VL local inference wrapper.
-- `models/openai.py`: OpenAI API wrapper.
-- `models/gemini.py`: Gemini API wrapper.
-- `models/llama.py`: Llama text-model wrapper.
-- `models/llava.py`: LLaVA multimodal wrapper.
-- `config.yaml`: evaluation configuration.
-- `docmsu_all.json`: full JSON dataset mapping (`sample_id -> sample`).
-- `docmsu_2500_split.json`: curated balanced split file.
-- `img/`: image files referenced by `img_name`.
+```text
+SynergyBench/
+├── evaluate.py                         # Main evaluation script
+├── curate_dataset.py                   # Split curation - train/val/test
+├── docmsu_all.json                     # Base dataset
+├── docmsu_2500_split.json              # Curated balanced split file
+├── img/                                
+├── evaluator_models/
+│   ├── base_model_evaluation.py        # Abstract evaluator interface
+│   ├── openai.py                       # Example implementation
+│   └── utils.py                        # Shared helpers
+└── generator_models/                   # Generation model wrappers (separate from evaluator pipeline)
+```
 
 ## Requirements
 
 - Linux/macOS (tested on Linux)
 - Python 3.10+
-- CUDA GPU recommended for Qwen3-VL inference
+- OpenRouter or OpenAI API key
 
 Python dependencies:
-- `torch`
-- `transformers`
-- `Pillow`
-- `PyYAML`
-- `accelerate` (recommended when using `device_map="auto"`)
 - `openai` (for OpenAI API backend)
-- `google-generativeai` (for Gemini API backend)
 
 ## 1) Environment Setup
 
@@ -97,14 +93,18 @@ Python dependencies:
 python -m venv .venv
 source .venv/bin/activate
 pip install --upgrade pip
-pip install torch transformers pillow pyyaml accelerate openai google-generativeai
+pip install openai
 ```
 
-If you are using gated/private models on Hugging Face, authenticate first:
+Set an API key before running evaluation:
 
 ```bash
-huggingface-cli login
+export OPENROUTER_API_KEY="your_key_here"
+# or:
+export OPENAI_API_KEY="your_key_here"
 ```
+
+Alternatively, set your api key in a .env file with the same names variable names above.
 
 ## 2) Prepare Data (DocMSU)
 
@@ -127,7 +127,7 @@ Expected sample schema in `docmsu_all.json`:
 }
 ```
 
-## 3) Recreate the Curated 2500-Sample Split (Optional)
+## 3) Recreate the Curated 2500-Sample Split
 
 To regenerate the balanced deterministic split used in this repo:
 
@@ -146,78 +146,53 @@ What this does:
 
 ## 4) Configure Evaluation
 
-Edit `config.yaml` as needed.
+Evaluation is configured through CLI flags in `evaluate.py`.
 
 Default configuration:
-- model provider: `qwen`
-- model size: `8b` (resolves to `Qwen/Qwen3-VL-8B-Instruct`)
+- model provider: `openai`
 - dataset: `docmsu_2500_split.json`
 - split: `all`
 - image directory: `img`
-- output path: `results/inference.json`
+- output path: `results/evaluator_inference.json`
 
-### Useful Config Options
+### Useful CLI Options
 
-- `model.model_id`: set exact Hugging Face model ID (overrides `size`)
-- `model.max_new_tokens`: generation length (default is small for yes/no output)
-- `model.system_prompt`: classification instruction prompt
-- `data.split`: one of `all`, `train`, `validation`, `test`
+- `--dataset`: path to dataset JSON (raw mapping or curated split JSON)
+- `--split`: one of `all`, `train`, `validation`, `test`
+- `--image-dir`: directory containing image files referenced by `img_name`
+- `--output`: output JSON path
+- `--provider`: evaluator provider (currently `openai`)
+- `--limit`: optional sample limit for quick smoke tests
 
 ## Model Backends
 
-`evaluate.py` now supports these `model.provider` values:
-- `qwen` (local)
-- `openai` (API)
-- `gemini` (API)
-- `llama` (local text model)
-- `llava` (local multimodal model)
+`evaluate.py` currently supports:
+- `openai` (API via OpenRouter-compatible OpenAI SDK)
 
-### Example: OpenAI
+Additional evaluator providers can be added in `evaluator_models/` and wired in `init_evaluator_model()`.
 
-```yaml
-model:
-  provider: openai
-  model_id: gpt-4.1-mini
-  max_new_tokens: 8
-  system_prompt: "You are a sarcasm classifier. Answer with exactly one token: yes or no."
-  # optional if OPENAI_API_KEY is already exported
-  # api_key: "..."
-```
 
-### Example: Gemini
-
-```yaml
-model:
-  provider: gemini
-  model_id: gemini-2.0-flash
-  max_new_tokens: 8
-  temperature: 0.0
-  system_prompt: "You are a sarcasm classifier. Answer with exactly one token: yes or no."
-  # optional if GEMINI_API_KEY is already exported
-  # api_key: "..."
-```
-
-Set API credentials as environment variables when using API-based wrappers:
-
-```bash
-export OPENAI_API_KEY="your_openai_key"
-export GEMINI_API_KEY="your_gemini_key"
-```
 
 ## 5) Run Evaluation
 
 ```bash
-python evaluate.py --config config.yaml
+python evaluate.py
+```
+
+Example quick smoke test:
+
+```bash
+python evaluate.py --split validation --limit 5 --output results/smoke_eval.json
 ```
 
 On success, the script writes:
 
-- `results/inference.json`
+- `results/evaluator_inference.json` (or your custom `--output` path)
 
 ## 6) Output Format
 
 The output JSON contains:
-- a copy of the config used
+- a copy of run arguments under `run_config`
 - per-sample predictions:
   - `ground_truth`
   - `text_only`
@@ -228,7 +203,7 @@ Example shape:
 
 ```json
 {
-  "config": {"...": "..."},
+  "run_config": {"...": "..."},
   "results": {
     "technology_00727": {
       "sample_id": "technology_00727",
@@ -249,13 +224,11 @@ Example shape:
 
 ## Troubleshooting
 
-- Out-of-memory errors:
-  - Use a smaller model or quantized variant
-  - Reduce concurrent GPU load
+- Missing API key errors:
+  - Ensure `OPENROUTER_API_KEY` (preferred) or `OPENAI_API_KEY` is set
 - Missing image predictions (`unknown` in image mode):
-  - Verify `data.image_dir` and `img_name` path alignment
-- Slow startup:
-  - First run downloads model weights from Hugging Face, which can be large
+  - Verify `--image-dir` and `img_name` path alignment
+  - Check that referenced image files exist under `img/`
 
 ## Citation and Attribution
 

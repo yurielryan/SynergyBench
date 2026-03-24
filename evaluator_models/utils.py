@@ -34,3 +34,17 @@ def build_base64_image_content(image_path: str | Path) -> dict[str, Any]:
 			"url": encode_image_to_data_url(image_path),
 		},
 	}
+
+
+def parse_yes_no_prediction(raw_output: str) -> str:
+	"""Parse model output to one of: yes, no, unknown."""
+	output = raw_output.strip().lower()
+	if output.startswith("yes"):
+		return "yes"
+	if output.startswith("no"):
+		return "no"
+	if "yes" in output and "no" not in output:
+		return "yes"
+	if "no" in output and "yes" not in output:
+		return "no"
+	return "unknown"

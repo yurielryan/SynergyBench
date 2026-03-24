@@ -1,37 +1,27 @@
-"""Evaluation pipeline for sarcasm classification with VLM backends.
+"""Evaluation pipeline for sarcasm classification with evaluator model backends.
 
-Expected model interface:
-        model.inference(text: str | None, image: str | Path | None) -> str
+Expected evaluator model interface:
+    model.evaluate(text: str | None, image: str | Path | None) -> str
 """
 
 from __future__ import annotations
 
 import argparse
-import importlib
 import json
 from pathlib import Path
 from typing import Any
 
-import yaml
-
-from generator_models.qwen import load_qwen_vl
-
-
-def load_config(config_path: str | Path) -> dict[str, Any]:
-    with Path(config_path).open("r", encoding="utf-8") as f:
-        cfg = yaml.safe_load(f)
-    if not isinstance(cfg, dict):
-        raise ValueError("YAML config must contain a top-level mapping.")
-    return cfg
+from evaluator_models.openai import load_openai_evaluator
+from evaluator_models.utils import parse_yes_no_prediction
 
 
 def load_dataset(dataset_path: str | Path) -> dict[str, dict[str, Any]]:
     with Path(dataset_path).open("r", encoding="utf-8") as f:
         data = json.load(f)
+
     if not isinstance(data, dict):
-        raise ValueError(
-            "Dataset JSON must be a top-level mapping of sample_id to sample."
-        )
+        raise ValueError("Dataset JSON must be a top-level mapping.")
+
     return data
 
 
@@ -39,156 +29,66 @@ def select_dataset_samples(
     dataset_json: dict[str, Any],
     split: str = "all",
 ) -> dict[str, dict[str, Any]]:
-    """Normalize raw or curated dataset JSON into sample_id->sample mapping.
+    """Normalize raw or curated dataset JSON into sample_id -> sample mapping.
 
     Supports two JSON layouts:
     1) raw: {sample_id: sample}
-    2) curated: {"meta": ..., "splits": {"train": {...}, "validation": {...}, "test": {...}}}
+    2) curated: {"meta": ..., "splits": {"train": {...}, "validation": {...}, "test": {...}}} 
+    
+    NOTE: This "meta" field simply contains the metadata. See docmsu_2500_split.json.
     """
-    if "splits" not in dataset_json:
-        return dataset_json  # raw layout
+    if "splits" not in dataset_json: # assume raw
+        return dataset_json
 
-    splits = dataset_json.get("splits", {})
+    splits = dataset_json.get("splits", {}) # available splits: train, validation, test
+    split_name = split.lower()
+    
     if not isinstance(splits, dict):
         raise ValueError("If present, 'splits' must be a mapping.")
 
-    split_name = split.lower()
-    if split_name in {
-        "train",
-        "validation",
-        "test",
-    }:  # take samples only from train/val/test
-        selected = splits.get(split_name, {})
-        if not isinstance(selected, dict):
-            raise ValueError(f"Split '{split_name}' must be a mapping.")
-        return selected
-
-    if split_name == "all":
-        merged: dict[str, dict[str, Any]] = {}  # include all samples
-        for key in ("train", "validation", "test"):
+    if split_name == "all": # default case for evaluating synergy creation.
+        merged: dict[str, dict[str, Any]] = {}
+        for key in ("train", "validation", "test"): # we assume the dataset will always have these three splits, even if some are empty.
             split_map = splits.get(key, {})
             if isinstance(split_map, dict):
                 merged.update(split_map)
         if merged:
             return merged
-        # Fallback for non-standard split names.
-        for split_map in splits.values():
-            if isinstance(split_map, dict):
-                merged.update(split_map)
-        return merged
 
-    raise ValueError("data.split must be one of: all, train, validation, test")
-
-
-def init_model(config: dict[str, Any]) -> Any:
-    model_cfg = config.get("model", {})
-    provider = str(model_cfg.get("provider", "qwen")).lower()
-
-    # Generic loader hook for arbitrary VLM wrappers.
-    # Example: "my_models.llava:load_model"
-    custom_loader = model_cfg.get("loader")
-    if custom_loader:
-        if ":" not in custom_loader:
-            raise ValueError(
-                "model.loader must use format '<module_path>:<function_name>'"
-            )
-        module_path, func_name = custom_loader.split(":", 1)
-        module = importlib.import_module(module_path)
-        loader_fn = getattr(module, func_name)
-        kwargs = model_cfg.get("kwargs", {})
-        if not isinstance(kwargs, dict):
-            raise ValueError(
-                "model.kwargs must be a mapping when model.loader is used."
-            )
-        return loader_fn(**kwargs)
-
-    if provider == "qwen":
-        return load_qwen_vl(
-            size=str(model_cfg.get("size", "8b")),
-            model_id=model_cfg.get("model_id"),
-            torch_dtype=str(model_cfg.get("torch_dtype", "auto")),
-            device_map=str(model_cfg.get("device_map", "auto")),
-            max_new_tokens=int(model_cfg.get("max_new_tokens", 64)),
-            system_prompt=model_cfg.get("system_prompt"),
-        )
-
-    if provider == "openai":
-        from models.openai import load_openai
-
-        return load_openai(
-            model_id=str(model_cfg.get("model_id", "gpt-4.1-mini")),
-            api_key=model_cfg.get("api_key"),
-            max_new_tokens=int(model_cfg.get("max_new_tokens", 16)),
-            system_prompt=model_cfg.get("system_prompt"),
-            timeout=float(model_cfg.get("timeout", 60.0)),
-        )
-
-    if provider == "gemini":
-        from models.gemini import load_gemini
-
-        return load_gemini(
-            model_id=str(model_cfg.get("model_id", "gemini-2.0-flash")),
-            api_key=model_cfg.get("api_key"),
-            max_new_tokens=int(model_cfg.get("max_new_tokens", 16)),
-            system_prompt=model_cfg.get("system_prompt"),
-            temperature=float(model_cfg.get("temperature", 0.0)),
-        )
-
-    if provider == "llama":
-        from models.llama import load_llama
-
-        return load_llama(
-            model_id=str(model_cfg.get("model_id", "meta-llama/Llama-3.2-3B-Instruct")),
-            torch_dtype=str(model_cfg.get("torch_dtype", "auto")),
-            device_map=str(model_cfg.get("device_map", "auto")),
-            max_new_tokens=int(model_cfg.get("max_new_tokens", 16)),
-            system_prompt=model_cfg.get("system_prompt"),
-        )
-
-    if provider == "llava":
-        from models.llava import load_llava
-
-        return load_llava(
-            model_id=str(model_cfg.get("model_id", "llava-hf/llava-1.5-7b-hf")),
-            torch_dtype=str(model_cfg.get("torch_dtype", "auto")),
-            device_map=str(model_cfg.get("device_map", "auto")),
-            max_new_tokens=int(model_cfg.get("max_new_tokens", 16)),
-            system_prompt=model_cfg.get("system_prompt"),
-        )
-
-    raise ValueError(
-        "Unsupported model provider. Currently supported: qwen, openai, gemini, llama, llava"
-    )
+    elif split_name in {"train", "validation", "test"}: # in case we need to separately train/validate then test later on.
+        selected = splits.get(split_name, {})
+        if not isinstance(selected, dict):
+            raise ValueError(f"Split '{split_name}' must be a mapping.")
+        return selected
+    
+    else:
+        raise ValueError("split must be one of: all, train, validation, test")
 
 
-# TODO: refactor this function into ./evaluator_models/utils.py and make it a common utility for all evaluator models.
-def parse_yes_no_prediction(raw_output: str) -> str:
-    output = raw_output.strip().lower()
-    if output.startswith("yes"):
-        return "yes"
-    if output.startswith("no"):
-        return "no"
-    if "yes" in output and "no" not in output:
-        return "yes"
-    if "no" in output and "yes" not in output:
-        return "no"
-    return "unknown"
+def init_evaluator_model(
+    provider: str = "openai",
+) -> Any:
+    """Initialize an evaluator model from evaluator_models by provider."""
+
+    provider_name = provider.lower()
+    if provider_name == "openai":
+        return load_openai_evaluator()
+
+    raise ValueError("Unsupported evaluator provider. Currently supported: openai")
 
 
-# TODO: Evaluate text, image, and multimodal need to use evaluator models.
 def evaluate_text(model: Any, dataset: dict[str, dict[str, Any]]) -> dict[str, str]:
-    """Run text-only evaluation by calling model.inference(text=..., image=None)."""
+    """Run text-only evaluation by calling model.evaluate(text=..., image=None)."""
     results: dict[str, str] = {}
     for sample_id, sample in dataset.items():
         text = sample.get("text")
-        if text is None:
+        if not isinstance(text, str) or not text.strip():
             results[sample_id] = "unknown"
             continue
-        raw_output = model.inference(
-            text=text, image=None
-        )  # TODO: change model to evaluator model
+
+        raw_output = model.evaluate(text=text, image=None)
         results[sample_id] = parse_yes_no_prediction(raw_output)
-    return results  # dictionary of sample_id: answer
+    return results
 
 
 def evaluate_image(
@@ -196,13 +96,13 @@ def evaluate_image(
     dataset: dict[str, dict[str, Any]],
     image_dir: str | Path,
 ) -> dict[str, str]:
-    """Run image-only evaluation by calling model.inference(text=None, image=...)."""
+    """Run image-only evaluation by calling model.evaluate(text=None, image=...)."""
     results: dict[str, str] = {}
     image_root = Path(image_dir)
 
     for sample_id, sample in dataset.items():
         img_name = sample.get("img_name")
-        if not img_name:
+        if not isinstance(img_name, str) or not img_name:
             results[sample_id] = "unknown"
             continue
 
@@ -211,9 +111,7 @@ def evaluate_image(
             results[sample_id] = "unknown"
             continue
 
-        raw_output = model.inference(
-            text=None, image=image_path
-        )  # TODO: change model to evaluator model
+        raw_output = model.evaluate(text=None, image=image_path)
         results[sample_id] = parse_yes_no_prediction(raw_output)
     return results
 
@@ -223,25 +121,27 @@ def evaluate_multimodal(
     dataset: dict[str, dict[str, Any]],
     image_dir: str | Path,
 ) -> dict[str, str]:
-    """Run multimodal evaluation by calling model.inference(text=..., image=...)."""
+    """Run multimodal evaluation by calling model.evaluate(text=..., image=...)."""
     results: dict[str, str] = {}
     image_root = Path(image_dir)
 
     for sample_id, sample in dataset.items():
         text = sample.get("text")
         img_name = sample.get("img_name")
-        # if text is None or not img_name:
-        #     results[sample_id] = "unknown"
-        #     continue
+
+        if not isinstance(text, str) or not text.strip():
+            results[sample_id] = "unknown"
+            continue
+        if not isinstance(img_name, str) or not img_name:
+            results[sample_id] = "unknown"
+            continue
 
         image_path = image_root / img_name
-        # if not image_path.exists():
-        #     results[sample_id] = "unknown"
-        #     continue
+        if not image_path.exists():
+            results[sample_id] = "unknown"
+            continue
 
-        raw_output = model.inference(
-            text=text, image=image_path
-        )  # TODO: change model to evaluator model
+        raw_output = model.evaluate(text=text, image=image_path)
         results[sample_id] = parse_yes_no_prediction(raw_output)
     return results
 
@@ -257,10 +157,9 @@ def aggregate_results(
         output[sample_id] = {
             "sample_id": sample_id,
             "ground_truth": "yes" if sample.get("is_sar") == 1 else "no",
-            # text only, image only, and multimodal inference
-            "text_only": text_results.get(sample_id),
-            "image_only": image_results.get(sample_id),
-            "multimodal": multimodal_results.get(sample_id),
+            "text_only": text_results.get(sample_id, "unknown"),
+            "image_only": image_results.get(sample_id, "unknown"),
+            "multimodal": multimodal_results.get(sample_id, "unknown"),
         }
     return output
 
@@ -272,26 +171,70 @@ def write_results(results: dict[str, Any], output_path: str | Path) -> None:
         json.dump(results, f, indent=2, ensure_ascii=False)
 
 
-def run_evaluation(config_path: str | Path) -> dict[str, Any]:
-    config = load_config(config_path)
-    data_cfg = config.get("data", {})
-
-    dataset_json = load_dataset(data_cfg.get("dataset_path", "docmsu_all.json"))
-    dataset = select_dataset_samples(
-        dataset_json, split=str(data_cfg.get("split", "all"))
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Run evaluator-based sarcasm inference.")
+    parser.add_argument(
+        "--dataset",
+        type=Path,
+        default=Path("docmsu_2500_split.json"),
+        help="Path to dataset JSON (raw mapping or curated split JSON).",
     )
-    image_dir = data_cfg.get("image_dir", "img")
+    parser.add_argument(
+        "--split",
+        choices=["all", "train", "validation", "test"],
+        default="all",
+        help="Which split to evaluate when dataset has curated splits.",
+    )
+    parser.add_argument(
+        "--image-dir",
+        type=Path,
+        default=Path("img"),
+        help="Directory containing image files referenced by img_name.",
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=Path("results/evaluator_inference.json"),
+        help="Output JSON file path.",
+    )
+    parser.add_argument(
+        "--provider",
+        choices=["openai"],
+        default="openai",
+        help="Evaluator model provider.",
+    )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=0,
+        help="Optional sample limit for quick smoke tests (0 means no limit).",
+    )
+    return parser.parse_args()
 
-    # TODO: implement different evaluator models under ./evaluator_models: MLP, CLIP, BLIP2
-    model = init_model(config)  # initialize vlm for inference
 
-    # inference: text only, image only, and both
-    text_results = evaluate_text(model, dataset)
-    image_results = evaluate_image(model, dataset, image_dir=image_dir)
-    multimodal_results = evaluate_multimodal(model, dataset, image_dir=image_dir)
+def run_evaluation(args: argparse.Namespace) -> dict[str, Any]:
+    dataset_json = load_dataset(args.dataset)
+    dataset = select_dataset_samples(dataset_json, split=args.split)
+
+    if args.limit and args.limit > 0: # set limits for tests
+        limited_items = list(dataset.items())[: args.limit]
+        dataset = dict(limited_items)
+
+    model = init_evaluator_model(provider=args.provider)
+
+    text_results = evaluate_text(model, dataset) # note that dataset here is the json: sample_id + annotations. raw images are in /img/{sample_id}.jpg
+    image_results = evaluate_image(model, dataset, image_dir=args.image_dir)
+    multimodal_results = evaluate_multimodal(model, dataset, image_dir=args.image_dir)
 
     final_results = {
-        "config": config,
+        "run_config": {
+            "dataset": str(args.dataset),
+            "split": args.split,
+            "image_dir": str(args.image_dir),
+            "output": str(args.output),
+            "provider": args.provider,
+            "limit": args.limit,
+        },
         "results": aggregate_results(
             dataset,
             text_results,
@@ -302,25 +245,11 @@ def run_evaluation(config_path: str | Path) -> dict[str, Any]:
     return final_results
 
 
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run sarcasm inference evaluation.")
-    parser.add_argument(
-        "--config",
-        type=Path,
-        default=Path("config.yaml"),
-        help="Path to evaluation YAML config file.",
-    )
-    return parser.parse_args()
-
-
 def main() -> None:
     args = parse_args()
-    config = load_config(args.config)
-    output_path = config.get("output", {}).get("output_path", "results/inference.json")
-
-    results = run_evaluation(args.config)
-    write_results(results, output_path)
-    print(f"Wrote inference results to {output_path}")
+    final_results = run_evaluation(args)
+    write_results(final_results, args.output)
+    print(f"Saved {len(final_results['results'])} results to {args.output}")
 
 
 if __name__ == "__main__":
