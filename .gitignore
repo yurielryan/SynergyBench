@@ -1,2 +1,4 @@
 /img
+/outputs
+/generated_images
 .env
