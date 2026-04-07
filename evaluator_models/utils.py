@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 import mimetypes
+import re
 from pathlib import Path
 from typing import Any
 
@@ -36,15 +37,24 @@ def build_base64_image_content(image_path: str | Path) -> dict[str, Any]:
 	}
 
 
-def parse_yes_no_prediction(raw_output: str) -> str:
+def parse_yes_no_prediction(raw_output: str | None) -> str:
 	"""Parse model output to one of: yes, no, unknown."""
-	output = raw_output.strip().lower()
-	if output.startswith("yes"):
+	if raw_output is None:
+		return "unknown"
+
+	output = str(raw_output).strip().lower()
+	if not output or output in {"none", "null", "unknown", "n/a"}:
+		return "unknown"
+
+	if re.match(r"^yes\b", output):
 		return "yes"
-	if output.startswith("no"):
+	if re.match(r"^no\b", output):
 		return "no"
-	if "yes" in output and "no" not in output:
+
+	has_yes = re.search(r"\byes\b", output) is not None
+	has_no = re.search(r"\bno\b", output) is not None
+	if has_yes and not has_no:
 		return "yes"
-	if "no" in output and "yes" not in output:
+	if has_no and not has_yes:
 		return "no"
 	return "unknown"
