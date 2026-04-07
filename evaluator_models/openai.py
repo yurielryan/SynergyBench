@@ -21,7 +21,6 @@ class OpenAIModelConfig(BaseModelConfig):
 	api_key: str | None = None
 	base_url: str = "https://openrouter.ai/api/v1"
 	timeout: float = 60.0
-	reasoning_enabled: bool = False # additional parameter to control reasoning.
 
 
 class OpenAIEvaluatorModel(BaseModel):
@@ -73,26 +72,47 @@ class OpenAIEvaluatorModel(BaseModel):
 		messages.append({"role": "user", "content": user_content})
 		return messages
 
+	def _create_chat_completion(
+		self,
+		messages: list[dict[str, Any]],
+	) -> Any:
+		request_kwargs: dict[str, Any] = {
+			"model": self.config.model_id,
+			"messages": messages,
+			"max_tokens": self.config.max_new_tokens,
+			"temperature": self.config.temperature,
+		}
+		# On this route, reasoning cannot be disabled; use low effort to keep overhead down.
+		# see https://openrouter.ai/docs/guides/best-practices/reasoning-tokens
+		request_kwargs["extra_body"] = {
+			"reasoning": {
+				"effort": "low", # btw, docs for openrouter reasoning tokens are outdated - gpt5 mini cannot use "none", and cannot exclude for reasoning.
+				"exclude": True,
+			},
+		}
+
+		response = self.model.chat.completions.create(**request_kwargs)
+		choices = getattr(response, "choices", None)
+		if not choices:
+			error_payload: Any = None
+			if hasattr(response, "model_dump"):
+				response_data = response.model_dump()
+				if isinstance(response_data, dict):
+					error_payload = response_data.get("error")
+			if error_payload:
+				raise RuntimeError(f"Provider returned error payload: {error_payload}")
+			raise RuntimeError("Provider returned no choices in completion response.")
+
+		return response
+
 	def evaluate(self, text: str | None = None, image: str | Path | None = None) -> str:
 		messages = self._build_messages(text=text, image=image)
-		reasoning_flag = "true" if self.config.reasoning_enabled else "false"
-
-        # see docs: https://openrouter.ai/docs/quickstart#using-the-openai-sdk
-		response = self.model.chat.completions.create(
-			model=self.config.model_id,
-			messages=messages,
-			max_tokens=self.config.max_new_tokens,
-			temperature=self.config.temperature,
-            # disabling reasoning cus it eats up max tokens. see docs: https://openrouter.ai/docs/guides/best-practices/reasoning-tokens
-			extra_body={
-				"reasoning": {
-					"enabled": reasoning_flag,
-				},
-			},
-		)
+		response = self._create_chat_completion(messages=messages)
 
 		message = response.choices[0].message
 		content = getattr(message, "content", "")
+		if content is None:
+			return ""
 
 		if isinstance(content, str):
 			return content.strip()
@@ -113,11 +133,10 @@ def load_openai_evaluator(
 	model_id: str = "openai/gpt-5-mini",
 	api_key: str | None = None,
 	base_url: str = "https://openrouter.ai/api/v1",
-	max_new_tokens: int = 16,
+	max_new_tokens: int = 250,
 	system_prompt: str | None = None,
 	temperature: float = 0.0,
 	timeout: float = 60.0,
-	reasoning_enabled: bool = False,
 ) -> OpenAIEvaluatorModel:
 	"""Convenience loader used by config-driven pipelines."""
 
@@ -130,6 +149,5 @@ def load_openai_evaluator(
 		or "You are a sarcasm classifier. Answer with exactly one token: yes or no.",
 		temperature=temperature,
 		timeout=timeout,
-		reasoning_enabled=reasoning_enabled,
 	)
 	return OpenAIEvaluatorModel(config)
