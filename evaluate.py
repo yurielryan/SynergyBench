@@ -9,10 +9,13 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from evaluator_models.openai import load_openai_evaluator
 from evaluator_models.utils import parse_yes_no_prediction
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 def load_dataset(dataset_path: str | Path) -> dict[str, dict[str, Any]]:
@@ -77,17 +80,31 @@ def init_evaluator_model(
     raise ValueError("Unsupported evaluator provider. Currently supported: openai")
 
 
-def evaluate_text(model: Any, dataset: dict[str, dict[str, Any]]) -> dict[str, str]:
+ProgressCallback = Callable[[str, int, int], None]
+
+
+def evaluate_text(
+    model: Any,
+    dataset: dict[str, dict[str, Any]],
+    results: dict[str, str] | None = None,
+    on_progress: ProgressCallback | None = None,
+) -> dict[str, str]:
     """Run text-only evaluation by calling model.evaluate(text=..., image=None)."""
-    results: dict[str, str] = {}
-    for sample_id, sample in dataset.items():
+    if results is None:
+        results = {}
+
+    total = len(dataset)
+    for index, (sample_id, sample) in enumerate(dataset.items(), start=1):
         text = sample.get("text")
         if not isinstance(text, str) or not text.strip():
             results[sample_id] = "unknown"
-            continue
+        else:
+            raw_output = model.evaluate(text=text, image=None)
+            results[sample_id] = parse_yes_no_prediction(raw_output)
 
-        raw_output = model.evaluate(text=text, image=None)
-        results[sample_id] = parse_yes_no_prediction(raw_output)
+        if on_progress is not None:
+            on_progress("text_only", index, total)
+
     return results
 
 
@@ -95,24 +112,31 @@ def evaluate_image(
     model: Any,
     dataset: dict[str, dict[str, Any]],
     image_dir: str | Path,
+    results: dict[str, str] | None = None,
+    on_progress: ProgressCallback | None = None,
 ) -> dict[str, str]:
     """Run image-only evaluation by calling model.evaluate(text=None, image=...)."""
-    results: dict[str, str] = {}
-    image_root = Path(image_dir)
+    if results is None:
+        results = {}
 
-    for sample_id, sample in dataset.items():
+    image_root = Path(image_dir)
+    total = len(dataset)
+
+    for index, (sample_id, sample) in enumerate(dataset.items(), start=1):
         img_name = sample.get("img_name")
         if not isinstance(img_name, str) or not img_name:
             results[sample_id] = "unknown"
-            continue
+        else:
+            image_path = image_root / img_name
+            if not image_path.exists():
+                results[sample_id] = "unknown"
+            else:
+                raw_output = model.evaluate(text=None, image=image_path)
+                results[sample_id] = parse_yes_no_prediction(raw_output)
 
-        image_path = image_root / img_name
-        if not image_path.exists():
-            results[sample_id] = "unknown"
-            continue
+        if on_progress is not None:
+            on_progress("image_only", index, total)
 
-        raw_output = model.evaluate(text=None, image=image_path)
-        results[sample_id] = parse_yes_no_prediction(raw_output)
     return results
 
 
@@ -120,29 +144,35 @@ def evaluate_multimodal(
     model: Any,
     dataset: dict[str, dict[str, Any]],
     image_dir: str | Path,
+    results: dict[str, str] | None = None,
+    on_progress: ProgressCallback | None = None,
 ) -> dict[str, str]:
     """Run multimodal evaluation by calling model.evaluate(text=..., image=...)."""
-    results: dict[str, str] = {}
-    image_root = Path(image_dir)
+    if results is None:
+        results = {}
 
-    for sample_id, sample in dataset.items():
+    image_root = Path(image_dir)
+    total = len(dataset)
+
+    for index, (sample_id, sample) in enumerate(dataset.items(), start=1):
         text = sample.get("text")
         img_name = sample.get("img_name")
 
         if not isinstance(text, str) or not text.strip():
             results[sample_id] = "unknown"
-            continue
-        if not isinstance(img_name, str) or not img_name:
+        elif not isinstance(img_name, str) or not img_name:
             results[sample_id] = "unknown"
-            continue
+        else:
+            image_path = image_root / img_name
+            if not image_path.exists():
+                results[sample_id] = "unknown"
+            else:
+                raw_output = model.evaluate(text=text, image=image_path)
+                results[sample_id] = parse_yes_no_prediction(raw_output)
 
-        image_path = image_root / img_name
-        if not image_path.exists():
-            results[sample_id] = "unknown"
-            continue
+        if on_progress is not None:
+            on_progress("multimodal", index, total)
 
-        raw_output = model.evaluate(text=text, image=image_path)
-        results[sample_id] = parse_yes_no_prediction(raw_output)
     return results
 
 
@@ -162,6 +192,28 @@ def aggregate_results(
             "multimodal": multimodal_results.get(sample_id, "unknown"),
         }
     return output
+
+
+def build_results_payload(
+    dataset: dict[str, dict[str, Any]],
+    run_config: dict[str, Any],
+    text_results: dict[str, str],
+    image_results: dict[str, str],
+    multimodal_results: dict[str, str],
+    checkpoint: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    payload: dict[str, Any] = {
+        "run_config": run_config,
+        "results": aggregate_results(
+            dataset,
+            text_results,
+            image_results,
+            multimodal_results,
+        ),
+    }
+    if checkpoint is not None:
+        payload["checkpoint"] = checkpoint
+    return payload
 
 
 def write_results(results: dict[str, Any], output_path: str | Path) -> None:
@@ -209,6 +261,12 @@ def parse_args() -> argparse.Namespace:
         default=0,
         help="Optional sample limit for quick smoke tests (0 means no limit).",
     )
+    parser.add_argument(
+        "--checkpoint-every",
+        type=int,
+        default=250,
+        help="Save partial results every N sample evaluations (0 disables checkpointing).",
+    )
     return parser.parse_args()
 
 
@@ -222,26 +280,105 @@ def run_evaluation(args: argparse.Namespace) -> dict[str, Any]:
 
     model = init_evaluator_model(provider=args.provider)
 
-    text_results = evaluate_text(model, dataset) # note that dataset here is the json: sample_id + annotations. raw images are in /img/{sample_id}.jpg
-    image_results = evaluate_image(model, dataset, image_dir=args.image_dir)
-    multimodal_results = evaluate_multimodal(model, dataset, image_dir=args.image_dir)
+    run_config: dict[str, Any] = {
+        "dataset": str(args.dataset),
+        "split": args.split,
+        "image_dir": str(args.image_dir),
+        "output": str(args.output),
+        "provider": args.provider,
+        "limit": args.limit,
+        "checkpoint_every": args.checkpoint_every,
+    }
 
-    final_results = {
-        "run_config": {
-            "dataset": str(args.dataset),
-            "split": args.split,
-            "image_dir": str(args.image_dir),
-            "output": str(args.output),
-            "provider": args.provider,
-            "limit": args.limit,
-        },
-        "results": aggregate_results(
+    text_results: dict[str, str] = {}
+    image_results: dict[str, str] = {}
+    multimodal_results: dict[str, str] = {}
+
+    total_steps = len(dataset) * 3
+    completed_steps = 0
+
+    def checkpoint_callback(mode: str, mode_index: int, mode_total: int) -> None:
+        nonlocal completed_steps
+        completed_steps += 1
+
+        should_save = False
+        if args.checkpoint_every > 0 and completed_steps % args.checkpoint_every == 0:
+            should_save = True
+        if mode_index == mode_total:
+            should_save = True
+
+        if not should_save:
+            return
+
+        checkpoint_payload = build_results_payload(
             dataset,
+            run_config,
             text_results,
             image_results,
             multimodal_results,
-        ),
-    }
+            checkpoint={
+                "status": "in_progress",
+                "completed_evaluations": completed_steps,
+                "total_evaluations": total_steps,
+                "last_mode": mode,
+                "last_mode_progress": f"{mode_index}/{mode_total}",
+            },
+        )
+        write_results(checkpoint_payload, args.output)
+        print(
+            f"[checkpoint] Saved progress {completed_steps}/{total_steps} "
+            f"(mode={mode}, step={mode_index}/{mode_total}) to {args.output}"
+        )
+
+    try:
+        evaluate_text(
+            model,
+            dataset,
+            results=text_results,
+            on_progress=checkpoint_callback,
+        ) # note that dataset here is the json: sample_id + annotations. raw images are in /img/{sample_id}.jpg
+        evaluate_image(
+            model,
+            dataset,
+            image_dir=args.image_dir,
+            results=image_results,
+            on_progress=checkpoint_callback,
+        )
+        evaluate_multimodal(
+            model,
+            dataset,
+            image_dir=args.image_dir,
+            results=multimodal_results,
+            on_progress=checkpoint_callback,
+        )
+    except Exception as exc:
+        failure_payload = build_results_payload(
+            dataset,
+            run_config,
+            text_results,
+            image_results,
+            multimodal_results,
+            checkpoint={
+                "status": "failed",
+                "completed_evaluations": completed_steps,
+                "total_evaluations": total_steps,
+                "error": str(exc),
+            },
+        )
+        write_results(failure_payload, args.output)
+        print(
+            f"[checkpoint] Saved failure state at {completed_steps}/{total_steps} "
+            f"to {args.output}"
+        )
+        raise
+
+    final_results = build_results_payload(
+        dataset,
+        run_config,
+        text_results,
+        image_results,
+        multimodal_results,
+    )
     return final_results
 
 
