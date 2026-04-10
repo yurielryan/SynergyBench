@@ -1,4 +1,6 @@
+__pycache__/
 /img
 /outputs
 /generated_images
 .env
+/responses

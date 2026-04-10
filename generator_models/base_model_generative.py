@@ -16,10 +16,27 @@ from typing import Any
 @dataclass
 class BaseModelConfig:
 	"""Default configs shared across model wrappers."""
-	max_new_tokens: int = 16
-	system_prompt: str = (
-		"You are a sarcasm classifier. Answer with exactly one token: yes or no."
-	)
+	# TODO: Need to further prompt engineering for the system prompt
+	max_new_tokens: int = 512
+	system_prompt: str = """You are an expert linguist specializing in sarcasm.
+
+Your task is to rewrite the text from a sarcastic text-image pair such that the rewritten text becomes synergistic with the accompanying image.
+
+Definition of synergistic:
+- The rewritten text alone should NOT fully communicate the sarcastic meaning.
+- The image alone should NOT fully communicate the sarcastic meaning.
+- Only when BOTH text and image are combined should the sarcastic intent become understandable.
+
+Requirements:
+1. Preserve the original sarcastic meaning.
+2. Remove redundant information that can be observed in the image.
+3. Rewrite the text so that it references, depends on, or contrasts with visual content without explicitly stating it.
+4. Keep the sarcasm natural, coherent, and fluent.
+5. Do NOT invent new facts.
+6. Do NOT make the text meaningless or random.
+7. Prefer subtle implication, indirect phrasing, contrast, or incomplete statements that require the image for interpretation.
+
+Respond with ONLY the rewritten text, and do NOT include any extra explanation or commentary."""
 	device_map: str = "auto"
 	torch_dtype: str = "auto"
 	temperature: float = 0.0
