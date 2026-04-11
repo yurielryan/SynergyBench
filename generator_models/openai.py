@@ -59,7 +59,21 @@ class OpenAIGeneratorModel(BaseModel):
         # 2) add user message
 		user_content: list[dict[str, Any]] = []
 		# TODO: Need to prompt engineer the user message further, current response is not rewriting the original text.
-		user_content.append({"type": "text", "text": text,})
+		user_content.append({
+			"type": "text",
+			"text": f"""Rewrite the following text such that understanding sarcasm requires combining it with the accompanying image.
+
+Goal:
+- Remove redundant information visible in the image.
+- Preserve sarcastic/ironic meaning.
+- Make the text alone insufficient to understand the sarcasm.
+- Ensure the sarcasm becomes clear only when text and image are viewed together.
+
+Original Text:
+{text}
+
+Return only the rewritten text without any additional information.""",
+		})
 
 		user_content.append(build_base64_image_content(image)) # this generic help function is implemented in utils.py.
 
@@ -81,7 +95,7 @@ class OpenAIGeneratorModel(BaseModel):
 		request_kwargs["extra_body"] = {
 			"reasoning": {
 				"effort": "low", # btw, docs for openrouter reasoning tokens are outdated - gpt5 mini cannot use "none", and cannot exclude for reasoning.
-				"exclude": True,
+				# "exclude": True,
 			},
 		}
 
@@ -127,9 +141,9 @@ def load_openai_generator(
 	model_id: str = "openai/gpt-5-mini",
 	api_key: str | None = None,
 	base_url: str = "https://openrouter.ai/api/v1",
-	max_new_tokens: int = 250,
+	max_new_tokens: int = 1024,
 	system_prompt: str | None = None,
-	temperature: float = 0.0,
+	temperature: float = 1e-5,
 	timeout: float = 60.0,
 ) -> OpenAIGeneratorModel:
 	"""Convenience loader used by config-driven pipelines."""
