@@ -58,21 +58,9 @@ class OpenAIGeneratorModel(BaseModel):
 
         # 2) add user message
 		user_content: list[dict[str, Any]] = []
-		# TODO: Need to prompt engineer the user message further, current response is not rewriting the original text.
 		user_content.append({
 			"type": "text",
-			"text": f"""Rewrite the following text such that understanding sarcasm requires combining it with the accompanying image.
-
-Goal:
-- Remove redundant information visible in the image.
-- Preserve sarcastic/ironic meaning.
-- Make the text alone insufficient to understand the sarcasm.
-- Ensure the sarcasm becomes clear only when text and image are viewed together.
-
-Original Text:
-{text}
-
-Return only the rewritten text without any additional information.""",
+			"text": self.config.user_prompt.format(text=text or ""),
 		})
 
 		user_content.append(build_base64_image_content(image)) # this generic help function is implemented in utils.py.
