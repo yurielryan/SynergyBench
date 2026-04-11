@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from generator_models.openai import load_openai_generator
+from generator_models.qwen import load_qwen3vl_generator
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -75,8 +76,10 @@ def init_generator_model(
     provider_name = provider.lower()
     if provider_name == "openai":
         return load_openai_generator()
+    if provider_name == "qwen":
+        return load_qwen3vl_generator()
 
-    raise ValueError("Unsupported generator provider. Currently supported: openai")
+    raise ValueError("Unsupported generator provider. Currently supported: openai, qwen[local]")
 
 
 ProgressCallback = Callable[[str, int, int], None]
@@ -183,7 +186,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--provider",
-        choices=["openai"],
+        choices=["openai", "qwen"],
         default="openai",
         help="Evaluator model provider.",
     )
