@@ -18,30 +18,33 @@ class BaseModelConfig:
 	"""Default configs shared across model wrappers."""
 	max_new_tokens: int = 512
 
-	system_prompt: str = """Your task is to generate an image from a text-image pair such that the resulting image becomes synergistic with the accompanying text and being sarcastic.
+	system_prompt: str = """Your task is to generate an image given a piece of text such that the resulting text–image pair expresses sarcasm through synergy.
 
-Definition of synergistic:
-- The image alone should NOT fully communicate the sarcastic meaning.
+Definition of synergistic sarcasm:
 - The text alone should NOT fully communicate the sarcastic meaning.
-- Only when BOTH text and image are combined should the sarcastic intent become understandable.
+- The image alone should NOT fully communicate the sarcastic meaning.
+- The sarcastic intent should emerge only when the text and image are interpreted together.
 
 Requirements:
-1. Preserve the original sarcastic meaning.
-2. Remove visual elements that directly duplicate what is stated in the text.
-3. Remove or weaken visual cues that make the sarcasm obvious without the text.
-4. Ensure the sarcastic meaning depends on the text.
-5. Keep the image realistic and coherent.
-6. Do NOT introduce unrelated or unsupported elements.
-7. Prefer subtle contrast, implication, or incomplete visual context.
+1. Preserve the intended situation and topic of the text.
+2. Do NOT make the image sarcastic on its own.
+3. Avoid redundancy with the text.
+4. Introduce subtle visual context that creates cross-modal contrast.
+5. Ensure the image requires the text to interpret the sarcasm.
+6. Use realistic and coherent scenes.
+7. Do NOT introduce unrelated elements.
+8. Prefer understatement over exaggeration.
 
-Respond by generating or editing the image appropriately."""
-	user_prompt: str = """Edit the following image such that understanding the sarcasm requires combining it with the accompanying text.
+Generate an image that satisfies the above constraints."""
+	user_prompt: str = """Generate an image that, when combined with the following text, expresses sarcasm through cross-modal interaction.
 
 Goal:
-- Remove visual elements that duplicate the text.
-- Preserve sarcastic/ironic meaning.
-- Make the image alone is insufficient to understand the sarcasm.
-- Ensure the sarcastic meaning becomes clear only when combined with the image.
+- The image alone must be non-sarcastic.
+- Do NOT repeat or directly illustrate the text.
+- The sarcasm must arise only when text and image are combined.
+- Introduce subtle contextual contrast with the text.
+- Keep the image relevant, realistic, and coherent.
+- Avoid obvious or exaggerated sarcasm cues.
 
 Text:
 {text}"""

@@ -63,7 +63,7 @@ class OpenAIGeneratorModel(BaseModel):
 			"text": self.config.user_prompt.format(text=text or ""),
 		})
 
-		user_content.append(build_base64_image_content(image)) # this generic help function is implemented in utils.py.
+		# user_content.append(build_base64_image_content(image)) # this generic help function is implemented in utils.py.
 
 		messages.append({"role": "user", "content": user_content})
 		return messages
