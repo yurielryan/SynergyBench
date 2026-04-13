@@ -6,6 +6,7 @@ Expected evaluator model interface:
 
 from __future__ import annotations
 
+import os
 import argparse
 import json
 from pathlib import Path
@@ -103,6 +104,8 @@ def generate_synergy(
     total = len(dataset)
 
     for index, (sample_id, sample) in tqdm(enumerate(dataset.items(), start=1), total=total, desc="Generating synergy"):
+        if index <= len(results):
+            continue
         text = sample.get("text")
         img_name = sample.get("img_name")
 
@@ -136,8 +139,8 @@ def aggregate_response(
         synergy_generation = synergy_response.get(sample_id, "unknown")
         output[sample_id] = {
             "sample_id": sample_id,
-            "synergy_context": synergy_generation.get("context", "unknown") if isinstance(synergy_generation, dict) else "unknown",
-            "synergy_reasoning": synergy_generation.get("reasoning", None) if isinstance(synergy_generation, dict) else None,
+            "context": synergy_generation.get("context", "unknown") if isinstance(synergy_generation, dict) else "unknown",
+            "reasoning": synergy_generation.get("reasoning", None) if isinstance(synergy_generation, dict) else None,
         }
     return output
 
@@ -217,6 +220,12 @@ def parse_args() -> argparse.Namespace:
         default=250,
         help="Save partial results every N sample evaluations (0 disables checkpointing).",
     )
+    parser.add_argument(
+        "--continue-from",
+        type=int,
+        default=0,
+        help="If set, will attempt to load existing results from output path and continue from there (skipping already completed samples). Value is ignored if checkpoint file is not found.",
+    )
     return parser.parse_args()
 
 
@@ -239,12 +248,25 @@ def run_generation(args: argparse.Namespace) -> dict[str, Any]:
         "reasoning": args.reasoning,
         "limit": args.limit,
         "checkpoint_every": args.checkpoint_every,
+        "continue": args.continue_from,
     }
 
     synergy_response: dict[str, str] = {}
 
     total_steps = len(dataset)
     completed_steps = 0
+
+    if args.continue_from > 0 and os.path.exists(args.output):
+        with Path(args.output).open("r", encoding="utf-8") as f:
+            existing_data = json.load(f)
+        existing_response = existing_data.get("response", {})
+        if isinstance(existing_response, dict):
+            for index, (sample_id, response) in enumerate(existing_response.items()):
+                if index >= args.continue_from:
+                    break
+                synergy_response[sample_id] = response
+            print(f"Loaded {len(synergy_response)} existing responses from {args.output} to continue from checkpoint.")
+        completed_steps = args.continue_from
 
     def checkpoint_callback(mode: str, mode_index: int, mode_total: int) -> None:
         nonlocal completed_steps

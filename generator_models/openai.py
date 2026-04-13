@@ -87,6 +87,10 @@ class OpenAIGeneratorModel(BaseModel):
 			},
 		}
 
+		if self.config.reasoning in ['medium', 'high']:
+			request_kwargs["max_tokens"] = max(self.config.max_new_tokens, 2048) # minimum 2048 tokens for reasoning to avoid out-of-budget errors.
+			print(f"Reasoning enabled with effort '{self.config.reasoning}', setting max_tokens to {request_kwargs['max_tokens']} to ensure sufficient tokens for reasoning output.")
+
 		response = self.model.chat.completions.create(**request_kwargs)
 
 		choices = getattr(response, "choices", None)
@@ -107,35 +111,24 @@ class OpenAIGeneratorModel(BaseModel):
 		response = self._create_chat_completion(messages=messages)
 
 		message = response.choices[0].message
-		content = getattr(message, "content", "")
-
-		if self.config.reasoning == "none":
-			if isinstance(content, str):
-				return content.strip(), None
-		else:
-			reasoning = getattr(message, "reasoning", "")
-			if isinstance(content, str):
-				content = content.strip()
-			
-			if reasoning is None:
-				return content, None
-			elif isinstance(reasoning, str):
-				return content.strip(), reasoning.strip()
+		content = getattr(message, "content", None)
+		reasoning = getattr(message, "reasoning", None)
 
 		if content is None:
-			return "", None
+			content = ""
+		elif isinstance(content, str):
+			content = content.strip()
+		else:
+			content = str(content).strip()
 
-		if isinstance(content, list): # handling multiple content parts
-			chunks: list[str] = []
-			for part in content:
-				if isinstance(part, dict):
-					text_value = part.get("text")
-					if isinstance(text_value, str):
-						chunks.append(text_value)
-			return " ".join(chunks).strip()
+		if reasoning is None:
+			reasoning = None
+		elif isinstance(reasoning, str):
+			reasoning = reasoning.strip()
+		else:
+			reasoning = str(reasoning).strip()
 
-		return str(content).strip(), str(reasoning).strip()
-
+		return content, reasoning
 
 def load_openai_generator(
 	model_id: str = "openai/gpt-5.4-mini",
