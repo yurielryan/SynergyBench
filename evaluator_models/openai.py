@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from openai import OpenAI
+from openai import OpenAI, APIStatusError
 
 from .base_model_evaluation import BaseModel, BaseModelConfig # from base_model_evaluation.py
 from .utils import build_base64_image_content # from utils.py
@@ -91,7 +91,23 @@ class OpenAIEvaluatorModel(BaseModel):
 			},
 		}
 
-		response = self.model.chat.completions.create(**request_kwargs)
+		try:
+			response = self.model.chat.completions.create(**request_kwargs)
+		except APIStatusError as exc:
+			# Surface upstream error body (OpenRouter/provider returns JSON with
+			# the real reason: moderation flag, data policy, rate limit, etc.).
+			body_text = ""
+			raw_response = getattr(exc, "response", None)
+			if raw_response is not None:
+				try:
+					body_text = raw_response.text
+				except Exception:
+					body_text = str(raw_response)
+			print(
+				f"[openrouter-error] status={exc.status_code} body={body_text[:2000]}"
+			)
+			raise
+
 		choices = getattr(response, "choices", None)
 		if not choices:
 			error_payload: Any = None
@@ -133,7 +149,7 @@ def load_openai_evaluator(
 	model_id: str = "openai/gpt-5-mini",
 	api_key: str | None = None,
 	base_url: str = "https://openrouter.ai/api/v1",
-	max_new_tokens: int = 250,
+	max_new_tokens: int = 1024,
 	system_prompt: str | None = None,
 	temperature: float = 0.0,
 	timeout: float = 60.0,

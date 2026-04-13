@@ -95,12 +95,21 @@ def evaluate_text(
 
     total = len(dataset)
     for index, (sample_id, sample) in enumerate(dataset.items(), start=1):
+        if sample_id in results:
+            if on_progress is not None:
+                on_progress("text_only", index, total)
+            continue
+
         text = sample.get("text")
         if not isinstance(text, str) or not text.strip():
             results[sample_id] = "unknown"
         else:
-            raw_output = model.evaluate(text=text, image=None)
-            results[sample_id] = parse_yes_no_prediction(raw_output)
+            try:
+                raw_output = model.evaluate(text=text, image=None)
+                results[sample_id] = parse_yes_no_prediction(raw_output)
+            except Exception as exc:
+                print(f"[error] text_only sample {sample_id}: {exc}")
+                results[sample_id] = "unknown"
 
         if on_progress is not None:
             on_progress("text_only", index, total)
@@ -123,6 +132,11 @@ def evaluate_image(
     total = len(dataset)
 
     for index, (sample_id, sample) in enumerate(dataset.items(), start=1):
+        if sample_id in results:
+            if on_progress is not None:
+                on_progress("image_only", index, total)
+            continue
+
         img_name = sample.get("img_name")
         if not isinstance(img_name, str) or not img_name:
             results[sample_id] = "unknown"
@@ -131,8 +145,12 @@ def evaluate_image(
             if not image_path.exists():
                 results[sample_id] = "unknown"
             else:
-                raw_output = model.evaluate(text=None, image=image_path)
-                results[sample_id] = parse_yes_no_prediction(raw_output)
+                try:
+                    raw_output = model.evaluate(text=None, image=image_path)
+                    results[sample_id] = parse_yes_no_prediction(raw_output)
+                except Exception as exc:
+                    print(f"[error] image_only sample {sample_id}: {exc}")
+                    results[sample_id] = "unknown"
 
         if on_progress is not None:
             on_progress("image_only", index, total)
@@ -155,6 +173,11 @@ def evaluate_multimodal(
     total = len(dataset)
 
     for index, (sample_id, sample) in enumerate(dataset.items(), start=1):
+        if sample_id in results:
+            if on_progress is not None:
+                on_progress("multimodal", index, total)
+            continue
+
         text = sample.get("text")
         img_name = sample.get("img_name")
 
@@ -167,13 +190,50 @@ def evaluate_multimodal(
             if not image_path.exists():
                 results[sample_id] = "unknown"
             else:
-                raw_output = model.evaluate(text=text, image=image_path)
-                results[sample_id] = parse_yes_no_prediction(raw_output)
+                try:
+                    raw_output = model.evaluate(text=text, image=image_path)
+                    results[sample_id] = parse_yes_no_prediction(raw_output)
+                except Exception as exc:
+                    print(f"[error] multimodal sample {sample_id}: {exc}")
+                    results[sample_id] = "unknown"
 
         if on_progress is not None:
             on_progress("multimodal", index, total)
 
     return results
+
+
+def load_checkpoint(
+    output_path: Path,
+) -> tuple[dict[str, str], dict[str, str], dict[str, str]] | None:
+    """Load partial results from an existing results/checkpoint file.
+
+    Returns (text_results, image_results, multimodal_results) if the file
+    exists and contains a "results" mapping, otherwise None. "unknown" and
+    missing per-modality entries are filtered out so they get re-evaluated.
+    """
+    if not output_path.exists():
+        return None
+
+    with output_path.open("r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    if not isinstance(data.get("results"), dict):
+        return None
+
+    text_results: dict[str, str] = {}
+    image_results: dict[str, str] = {}
+    multimodal_results: dict[str, str] = {}
+
+    for sample_id, result in data.get("results", {}).items():
+        if result.get("text_only") not in (None, "unknown"):
+            text_results[sample_id] = result["text_only"]
+        if result.get("image_only") not in (None, "unknown"):
+            image_results[sample_id] = result["image_only"]
+        if result.get("multimodal") not in (None, "unknown"):
+            multimodal_results[sample_id] = result["multimodal"]
+
+    return text_results, image_results, multimodal_results
 
 
 def aggregate_results(
@@ -267,6 +327,12 @@ def parse_args() -> argparse.Namespace:
         default=250,
         help="Save partial results every N sample evaluations (0 disables checkpointing).",
     )
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        default=False,
+        help="Resume from an existing checkpoint at --output path if one exists.",
+    )
     return parser.parse_args()
 
 
@@ -293,6 +359,17 @@ def run_evaluation(args: argparse.Namespace) -> dict[str, Any]:
     text_results: dict[str, str] = {}
     image_results: dict[str, str] = {}
     multimodal_results: dict[str, str] = {}
+
+    if args.resume:
+        prior = load_checkpoint(args.output)
+        if prior is not None:
+            text_results, image_results, multimodal_results = prior
+            print(
+                f"[resume] Loaded checkpoint: {len(text_results)} text, "
+                f"{len(image_results)} image, {len(multimodal_results)} multimodal results."
+            )
+        else:
+            print("[resume] No resumable checkpoint found at output path; starting fresh.")
 
     total_steps = len(dataset) * 3
     completed_steps = 0
