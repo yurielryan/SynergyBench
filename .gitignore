@@ -1,6 +1,12 @@
+# Ignore Python bytecode files and cache directories
 __pycache__/
+
+# Ignore data files
 /img
 /outputs
 /generated_images
-.env
 /responses
+
+# Ignore environment variables and log files
+.env
+*.log

@@ -11,9 +11,10 @@ import json
 from pathlib import Path
 from typing import Any, Callable
 
-from generator_models.openai import load_openai_generator
+from generator_models.openai import load_openai_generator, OpenAIModelConfig
 from generator_models.qwen import load_qwen3vl_generator
 from dotenv import load_dotenv
+from tqdm import tqdm
 
 load_dotenv()
 
@@ -69,13 +70,16 @@ def select_dataset_samples(
 
 
 def init_generator_model(
-    provider: str = "openai",
+    args: dict[str, Any] | None = None,
 ) -> Any:
     """Initialize a generator model from generator_models by provider."""
 
-    provider_name = provider.lower()
+    if args is None:
+        raise ValueError("Missing arguments")
+
+    provider_name = args.provider.lower()
     if provider_name == "openai":
-        return load_openai_generator()
+        return load_openai_generator(reasoning=args.reasoning)
     if provider_name == "qwen":
         return load_qwen3vl_generator()
 
@@ -98,7 +102,7 @@ def generate_synergy(
     image_root = Path(image_dir)
     total = len(dataset)
 
-    for index, (sample_id, sample) in enumerate(dataset.items(), start=1):
+    for index, (sample_id, sample) in tqdm(enumerate(dataset.items(), start=1), total=total, desc="Generating synergy"):
         text = sample.get("text")
         img_name = sample.get("img_name")
 
@@ -112,7 +116,10 @@ def generate_synergy(
                 results[sample_id] = "unknown"
             else:
                 raw_output = model.inference(text=text, image=image_path)
-                results[sample_id] = raw_output if raw_output else "unknown"
+                results[sample_id] = {
+                    "context": raw_output[0], 
+                    "reasoning": raw_output[1]
+                } if raw_output else {"context": "unknown", "reasoning": None}
 
         if on_progress is not None:
             on_progress("synergy generation", index, total)
@@ -126,9 +133,11 @@ def aggregate_response(
 ) -> dict[str, dict[str, Any]]:
     output: dict[str, dict[str, Any]] = {}
     for sample_id, sample in dataset.items():
+        synergy_generation = synergy_response.get(sample_id, "unknown")
         output[sample_id] = {
             "sample_id": sample_id,
-            "synergy_text": synergy_response.get(sample_id, "unknown"),
+            "synergy_context": synergy_generation.get("context", "unknown") if isinstance(synergy_generation, dict) else "unknown",
+            "synergy_reasoning": synergy_generation.get("reasoning", None) if isinstance(synergy_generation, dict) else None,
         }
     return output
 
@@ -191,6 +200,12 @@ def parse_args() -> argparse.Namespace:
         help="Evaluator model provider.",
     )
     parser.add_argument(
+        "--reasoning",
+        choices=['none', 'minimal', 'low', 'medium', 'high'],
+        default='none',
+        help="Level of reasoning to apply.",
+    )
+    parser.add_argument(
         "--limit",
         type=int,
         default=0,
@@ -213,7 +228,7 @@ def run_generation(args: argparse.Namespace) -> dict[str, Any]:
         limited_items = list(dataset.items())[: args.limit]
         dataset = dict(limited_items)
 
-    model = init_generator_model(provider=args.provider)
+    model = init_generator_model(args=args)
 
     run_config: dict[str, Any] = {
         "dataset": str(args.dataset),
@@ -221,6 +236,7 @@ def run_generation(args: argparse.Namespace) -> dict[str, Any]:
         "image_dir": str(args.image_dir),
         "output": str(args.output),
         "provider": args.provider,
+        "reasoning": args.reasoning,
         "limit": args.limit,
         "checkpoint_every": args.checkpoint_every,
     }

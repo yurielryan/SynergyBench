@@ -17,9 +17,10 @@ from .utils import build_base64_image_content
 class OpenAIModelConfig(BaseModelConfig):
 	"""Config for OpenRouter calls through the OpenAI SDK."""
 
-	model_id: str = "openai/gpt-5-mini"
+	model_id: str = "openai/gpt-5.4-mini"
 	api_key: str | None = None
 	base_url: str = "https://openrouter.ai/api/v1"
+	reasoning: str = "none"
 	timeout: float = 60.0
 
 
@@ -47,8 +48,8 @@ class OpenAIGeneratorModel(BaseModel):
 		)
 
 	def _build_messages(self, text: str | None, image: str | Path | None) -> list[dict[str, Any]]:
-		if text is None and image is None: # big problemo
-			raise ValueError("At least one of text or image must be provided.")
+		if text is None or image is None:
+			raise ValueError("Both text and image must be provided.")
 
 		messages: list[dict[str, Any]] = [] # init list for messages
   
@@ -82,12 +83,12 @@ class OpenAIGeneratorModel(BaseModel):
 		# see https://openrouter.ai/docs/guides/best-practices/reasoning-tokens
 		request_kwargs["extra_body"] = {
 			"reasoning": {
-				"effort": "low", # btw, docs for openrouter reasoning tokens are outdated - gpt5 mini cannot use "none", and cannot exclude for reasoning.
-				# "exclude": True,
+				"effort": self.config.reasoning,
 			},
 		}
 
 		response = self.model.chat.completions.create(**request_kwargs)
+
 		choices = getattr(response, "choices", None)
 		if not choices:
 			error_payload: Any = None
@@ -107,11 +108,22 @@ class OpenAIGeneratorModel(BaseModel):
 
 		message = response.choices[0].message
 		content = getattr(message, "content", "")
-		if content is None:
-			return ""
 
-		if isinstance(content, str):
-			return content.strip()
+		if self.config.reasoning == "none":
+			if isinstance(content, str):
+				return content.strip(), None
+		else:
+			reasoning = getattr(message, "reasoning", "")
+			if isinstance(content, str):
+				content = content.strip()
+			
+			if reasoning is None:
+				return content, None
+			elif isinstance(reasoning, str):
+				return content.strip(), reasoning.strip()
+
+		if content is None:
+			return "", None
 
 		if isinstance(content, list): # handling multiple content parts
 			chunks: list[str] = []
@@ -122,15 +134,15 @@ class OpenAIGeneratorModel(BaseModel):
 						chunks.append(text_value)
 			return " ".join(chunks).strip()
 
-		return str(content).strip()
+		return str(content).strip(), str(reasoning).strip()
 
 
 def load_openai_generator(
-	model_id: str = "openai/gpt-5-mini",
+	model_id: str = "openai/gpt-5.4-mini",
 	api_key: str | None = None,
 	base_url: str = "https://openrouter.ai/api/v1",
 	max_new_tokens: int = 1024,
-	system_prompt: str | None = None,
+	reasoning: str = "none",
 	temperature: float = 1e-5,
 	timeout: float = 60.0,
 ) -> OpenAIGeneratorModel:
@@ -141,7 +153,7 @@ def load_openai_generator(
 		api_key=api_key,
 		base_url=base_url,
 		max_new_tokens=max_new_tokens,
-		system_prompt=system_prompt,
+		reasoning=reasoning,
 		temperature=temperature,
 		timeout=timeout,
 	)
