@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+# TODO: change these paths for each (modified) dataset!
 INPUT_PATH = Path("results/base_dataset.json")
 ERROR_PATH = Path("results/erroneous.json")
 
@@ -39,6 +40,8 @@ def main():
         counts[label] += 1
         if label == "error":
             errors[sid] = sample
+        else:
+            sample["interaction"] = label
 
     total = len(results)
     print(f"Total samples: {total}")
@@ -49,6 +52,10 @@ def main():
     with open(ERROR_PATH, "w") as f:
         json.dump(errors, f, indent=2)
     print(f"\nSaved {len(errors)} erroneous samples to {ERROR_PATH}")
+
+    with open(INPUT_PATH, "w") as f:
+        json.dump(data, f, indent=2)
+    print(f"Updated {INPUT_PATH} with interaction labels")
 
 
 if __name__ == "__main__":
