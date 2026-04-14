@@ -1,0 +1,18 @@
+{
+  "run_config": {
+    "dataset": "docmsu_2500_split.json",
+    "split": "all",
+    "image_dir": "img",
+    "output": "results/gpt-5.4_none_eval.json",
+    "provider": "openai",
+    "limit": 0,
+    "checkpoint_every": 250,
+    "text_override": "generated_text/gpt-5.4_none.json",
+    "modes": [
+      "text_only",
+      "multimodal"
+    ],
+    "image_results_from": "results/base_dataset.json"
+  },
+  "results": {}
+}

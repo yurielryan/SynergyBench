@@ -333,16 +333,104 @@ def parse_args() -> argparse.Namespace:
         default=False,
         help="Resume from an existing checkpoint at --output path if one exists.",
     )
+    parser.add_argument(
+        "--text-override",
+        type=Path,
+        default=None,
+        help=(
+            "Optional path to a generated_text JSON with a top-level 'response' "
+            "mapping of sample_id -> {'context': str}. When set, each sample's "
+            "'text' field is replaced by the matching 'context' for evaluation."
+        ),
+    )
+    parser.add_argument(
+        "--modes",
+        type=str,
+        default="text_only,image_only,multimodal",
+        help=(
+            "Comma-separated subset of modes to evaluate. "
+            "Options: text_only, image_only, multimodal."
+        ),
+    )
+    parser.add_argument(
+        "--image-results-from",
+        type=Path,
+        default=None,
+        help=(
+            "Optional path to a prior results JSON (e.g. base-dataset run). "
+            "The 'image_only' predictions (yes/no) from that file are loaded "
+            "into the final output, so you can skip re-running image_only."
+        ),
+    )
     return parser.parse_args()
+
+
+def load_image_only_results(path: Path) -> dict[str, str]:
+    """Extract yes/no image_only predictions from a prior results JSON."""
+    with path.open("r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    image_results: dict[str, str] = {}
+    for sample_id, result in data.get("results", {}).items():
+        value = result.get("image_only")
+        if value in ("yes", "no"):
+            image_results[sample_id] = value
+    return image_results
+
+
+def apply_text_override(
+    dataset: dict[str, dict[str, Any]],
+    override_path: Path,
+) -> dict[str, dict[str, Any]]:
+    """Replace each sample's 'text' with the matching 'context' from override_path."""
+    with override_path.open("r", encoding="utf-8") as f:
+        override_json = json.load(f)
+
+    response = override_json.get("response", {})
+    if not isinstance(response, dict):
+        raise ValueError(f"{override_path} must contain a top-level 'response' mapping.")
+
+    overridden: dict[str, dict[str, Any]] = {}
+    missing: list[str] = []
+    for sample_id, sample in dataset.items():
+        entry = response.get(sample_id)
+        context = None
+        if isinstance(entry, dict):
+            for key in ("context", "synergy_context"):
+                value = entry.get(key)
+                if isinstance(value, str):
+                    context = value
+                    break
+        if context is None:
+            missing.append(sample_id)
+            continue
+        overridden[sample_id] = {**sample, "text": context}
+
+    if missing:
+        print(
+            f"[text-override] {len(missing)} samples missing 'context' in "
+            f"{override_path}; those will be dropped."
+        )
+
+    return overridden
 
 
 def run_evaluation(args: argparse.Namespace) -> dict[str, Any]:
     dataset_json = load_dataset(args.dataset)
     dataset = select_dataset_samples(dataset_json, split=args.split)
 
+    if args.text_override is not None:
+        dataset = apply_text_override(dataset, args.text_override)
+
     if args.limit and args.limit > 0: # set limits for tests
         limited_items = list(dataset.items())[: args.limit]
         dataset = dict(limited_items)
+
+    valid_modes = {"text_only", "image_only", "multimodal"}
+    selected_modes = [m.strip() for m in args.modes.split(",") if m.strip()]
+    unknown = set(selected_modes) - valid_modes
+    if unknown:
+        raise ValueError(f"Unknown modes: {sorted(unknown)}. Valid: {sorted(valid_modes)}")
 
     model = init_evaluator_model(provider=args.provider)
 
@@ -354,6 +442,11 @@ def run_evaluation(args: argparse.Namespace) -> dict[str, Any]:
         "provider": args.provider,
         "limit": args.limit,
         "checkpoint_every": args.checkpoint_every,
+        "text_override": str(args.text_override) if args.text_override else None,
+        "modes": selected_modes,
+        "image_results_from": (
+            str(args.image_results_from) if args.image_results_from else None
+        ),
     }
 
     text_results: dict[str, str] = {}
@@ -371,12 +464,28 @@ def run_evaluation(args: argparse.Namespace) -> dict[str, Any]:
         else:
             print("[resume] No resumable checkpoint found at output path; starting fresh.")
 
-    total_steps = len(dataset) * 3
+    if args.image_results_from is not None:
+        reused = load_image_only_results(args.image_results_from)
+        for sample_id, value in reused.items():
+            image_results.setdefault(sample_id, value)
+        print(
+            f"[image-reuse] Loaded {len(reused)} image_only predictions from "
+            f"{args.image_results_from}; {len(image_results)} total in image_results."
+        )
+
+    total_steps = len(dataset) * len(selected_modes)
     completed_steps = 0
 
     def checkpoint_callback(mode: str, mode_index: int, mode_total: int) -> None:
         nonlocal completed_steps
         completed_steps += 1
+
+        if mode_index % 10 == 0 or mode_index == 1 or mode_index == mode_total:
+            print(
+                f"[progress] {mode} {mode_index}/{mode_total} "
+                f"(overall {completed_steps}/{total_steps})",
+                flush=True,
+            )
 
         should_save = False
         if args.checkpoint_every > 0 and completed_steps % args.checkpoint_every == 0:
@@ -404,30 +513,34 @@ def run_evaluation(args: argparse.Namespace) -> dict[str, Any]:
         write_results(checkpoint_payload, args.output)
         print(
             f"[checkpoint] Saved progress {completed_steps}/{total_steps} "
-            f"(mode={mode}, step={mode_index}/{mode_total}) to {args.output}"
+            f"(mode={mode}, step={mode_index}/{mode_total}) to {args.output}",
+            flush=True,
         )
 
     try:
-        evaluate_text(
-            model,
-            dataset,
-            results=text_results,
-            on_progress=checkpoint_callback,
-        ) # note that dataset here is the json: sample_id + annotations. raw images are in /img/{sample_id}.jpg
-        evaluate_image(
-            model,
-            dataset,
-            image_dir=args.image_dir,
-            results=image_results,
-            on_progress=checkpoint_callback,
-        )
-        evaluate_multimodal(
-            model,
-            dataset,
-            image_dir=args.image_dir,
-            results=multimodal_results,
-            on_progress=checkpoint_callback,
-        )
+        if "text_only" in selected_modes:
+            evaluate_text(
+                model,
+                dataset,
+                results=text_results,
+                on_progress=checkpoint_callback,
+            )
+        if "image_only" in selected_modes:
+            evaluate_image(
+                model,
+                dataset,
+                image_dir=args.image_dir,
+                results=image_results,
+                on_progress=checkpoint_callback,
+            )
+        if "multimodal" in selected_modes:
+            evaluate_multimodal(
+                model,
+                dataset,
+                image_dir=args.image_dir,
+                results=multimodal_results,
+                on_progress=checkpoint_callback,
+            )
     except Exception as exc:
         failure_payload = build_results_payload(
             dataset,

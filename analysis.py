@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-# TODO: change these paths for each (modified) dataset!
+# NOTE: change these paths for each (modified) dataset!
 INPUT_PATH = Path("results/base_dataset.json")
 ERROR_PATH = Path("results/erroneous.json")
 
@@ -25,6 +25,20 @@ def classify(sample):
     if not x1_c and not x2_c and x12_c:
         return "S"
     return "error"
+
+
+def text_modification():
+    # TODO: this function modifies a sample that is classified as U2 in the base dataset.
+    # TODO 1: identify all samples that are U1.
+    # TODO 2: use the text modality, for the same sample_id, from these json files: generated_text/gpt-5.4_low.json, generated_text/gpt-5.4_med.json, generated_text/gpt-5.4_none.json
+    # TODO 3: run classify on these samples again 
+    # TODO 4: compare the change in classification from U1 to {R, U2, S} --> print out the percentage changed to redundancy, changed to U2, and changed to S. also print out the change in error.
+    # TODO 5: save a new file modified_u2_{reasoning_level: none, low, med}.json with all the samples, but update the samples that were modified with the new classification.
+    
+
+def s_created():
+    # TODO: this function computes the amount of synergy created due to a modification.
+    
 
 
 def main():
