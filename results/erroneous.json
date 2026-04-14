@@ -1,0 +1,1696 @@
+{
+  "sport_00460": {
+    "sample_id": "sport_00460",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00389": {
+    "sample_id": "entertainment_00389",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "business_00344": {
+    "sample_id": "business_00344",
+    "ground_truth": "yes",
+    "text_only": "yes",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "sport_00279": {
+    "sample_id": "sport_00279",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "health_00306": {
+    "sample_id": "health_00306",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "sport_00618": {
+    "sample_id": "sport_00618",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_01606": {
+    "sample_id": "entertainment_01606",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "health_00387": {
+    "sample_id": "health_00387",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_01570": {
+    "sample_id": "entertainment_01570",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_01252": {
+    "sample_id": "entertainment_01252",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "education_00021": {
+    "sample_id": "education_00021",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "sport_00454": {
+    "sample_id": "sport_00454",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00283": {
+    "sample_id": "entertainment_00283",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "politic_00356": {
+    "sample_id": "politic_00356",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_01560": {
+    "sample_id": "entertainment_01560",
+    "ground_truth": "yes",
+    "text_only": "yes",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00225": {
+    "sample_id": "entertainment_00225",
+    "ground_truth": "yes",
+    "text_only": "yes",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "technology_01477": {
+    "sample_id": "technology_01477",
+    "ground_truth": "no",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "yes"
+  },
+  "technology_00325": {
+    "sample_id": "technology_00325",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00226": {
+    "sample_id": "entertainment_00226",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "sport_00268": {
+    "sample_id": "sport_00268",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00820": {
+    "sample_id": "entertainment_00820",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_01883": {
+    "sample_id": "entertainment_01883",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "health_01054": {
+    "sample_id": "health_01054",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "health_00615": {
+    "sample_id": "health_00615",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "sport_00125": {
+    "sample_id": "sport_00125",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "business_00723": {
+    "sample_id": "business_00723",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "politic_00409": {
+    "sample_id": "politic_00409",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "business_00034": {
+    "sample_id": "business_00034",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "technology_02631": {
+    "sample_id": "technology_02631",
+    "ground_truth": "no",
+    "text_only": "yes",
+    "image_only": "no",
+    "multimodal": "yes"
+  },
+  "sport_00301": {
+    "sample_id": "sport_00301",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "sport_00209": {
+    "sample_id": "sport_00209",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "health_00794": {
+    "sample_id": "health_00794",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "business_00200": {
+    "sample_id": "business_00200",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_01865": {
+    "sample_id": "entertainment_01865",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "health_01265": {
+    "sample_id": "health_01265",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "yes",
+    "multimodal": "no"
+  },
+  "health_01235": {
+    "sample_id": "health_01235",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_01900": {
+    "sample_id": "entertainment_01900",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00292": {
+    "sample_id": "entertainment_00292",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "yes",
+    "multimodal": "no"
+  },
+  "sport_00573": {
+    "sample_id": "sport_00573",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00382": {
+    "sample_id": "entertainment_00382",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_07647": {
+    "sample_id": "entertainment_07647",
+    "ground_truth": "no",
+    "text_only": "yes",
+    "image_only": "no",
+    "multimodal": "yes"
+  },
+  "politic_00260": {
+    "sample_id": "politic_00260",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "education_00209": {
+    "sample_id": "education_00209",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "health_00454": {
+    "sample_id": "health_00454",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "health_00826": {
+    "sample_id": "health_00826",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00447": {
+    "sample_id": "entertainment_00447",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "science_00070": {
+    "sample_id": "science_00070",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "health_06653": {
+    "sample_id": "health_06653",
+    "ground_truth": "no",
+    "text_only": "yes",
+    "image_only": "no",
+    "multimodal": "yes"
+  },
+  "business_00388": {
+    "sample_id": "business_00388",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_01105": {
+    "sample_id": "entertainment_01105",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "yes",
+    "multimodal": "no"
+  },
+  "entertainment_01217": {
+    "sample_id": "entertainment_01217",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "sport_00102": {
+    "sample_id": "sport_00102",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "business_00545": {
+    "sample_id": "business_00545",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_01081": {
+    "sample_id": "entertainment_01081",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00915": {
+    "sample_id": "entertainment_00915",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "education_00098": {
+    "sample_id": "education_00098",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_01316": {
+    "sample_id": "entertainment_01316",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_01813": {
+    "sample_id": "entertainment_01813",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "science_00136": {
+    "sample_id": "science_00136",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00813": {
+    "sample_id": "entertainment_00813",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "sport_00724": {
+    "sample_id": "sport_00724",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00399": {
+    "sample_id": "entertainment_00399",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "health_00262": {
+    "sample_id": "health_00262",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_01689": {
+    "sample_id": "entertainment_01689",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "technology_04687": {
+    "sample_id": "technology_04687",
+    "ground_truth": "no",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "yes"
+  },
+  "politic_00023": {
+    "sample_id": "politic_00023",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "technology_00262": {
+    "sample_id": "technology_00262",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "technology_00511": {
+    "sample_id": "technology_00511",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00488": {
+    "sample_id": "entertainment_00488",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "sport_00702": {
+    "sample_id": "sport_00702",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "health_00324": {
+    "sample_id": "health_00324",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_01265": {
+    "sample_id": "entertainment_01265",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00600": {
+    "sample_id": "entertainment_00600",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "sport_00190": {
+    "sample_id": "sport_00190",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "environment_00103": {
+    "sample_id": "environment_00103",
+    "ground_truth": "yes",
+    "text_only": "yes",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_01890": {
+    "sample_id": "entertainment_01890",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "yes",
+    "multimodal": "no"
+  },
+  "entertainment_01025": {
+    "sample_id": "entertainment_01025",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "politic_00246": {
+    "sample_id": "politic_00246",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00651": {
+    "sample_id": "entertainment_00651",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "health_01168": {
+    "sample_id": "health_01168",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00626": {
+    "sample_id": "entertainment_00626",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "technology_04748": {
+    "sample_id": "technology_04748",
+    "ground_truth": "no",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "yes"
+  },
+  "education_00079": {
+    "sample_id": "education_00079",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00099": {
+    "sample_id": "entertainment_00099",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "technology_00319": {
+    "sample_id": "technology_00319",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00017": {
+    "sample_id": "entertainment_00017",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "science_00154": {
+    "sample_id": "science_00154",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "health_00403": {
+    "sample_id": "health_00403",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "technology_00051": {
+    "sample_id": "technology_00051",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "education_00063": {
+    "sample_id": "education_00063",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_01273": {
+    "sample_id": "entertainment_01273",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "business_00491": {
+    "sample_id": "business_00491",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00859": {
+    "sample_id": "entertainment_00859",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "health_00184": {
+    "sample_id": "health_00184",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "technology_00001": {
+    "sample_id": "technology_00001",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_01594": {
+    "sample_id": "entertainment_01594",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_01486": {
+    "sample_id": "entertainment_01486",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00692": {
+    "sample_id": "entertainment_00692",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "politic_00573": {
+    "sample_id": "politic_00573",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "sport_00419": {
+    "sample_id": "sport_00419",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00586": {
+    "sample_id": "entertainment_00586",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_01209": {
+    "sample_id": "entertainment_01209",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "sport_00631": {
+    "sample_id": "sport_00631",
+    "ground_truth": "yes",
+    "text_only": "yes",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00255": {
+    "sample_id": "entertainment_00255",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "politic_00121": {
+    "sample_id": "politic_00121",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "technology_00210": {
+    "sample_id": "technology_00210",
+    "ground_truth": "yes",
+    "text_only": "yes",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00465": {
+    "sample_id": "entertainment_00465",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "environment_00086": {
+    "sample_id": "environment_00086",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "business_00658": {
+    "sample_id": "business_00658",
+    "ground_truth": "yes",
+    "text_only": "yes",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "science_00031": {
+    "sample_id": "science_00031",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_01634": {
+    "sample_id": "entertainment_01634",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_01120": {
+    "sample_id": "entertainment_01120",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "politic_00057": {
+    "sample_id": "politic_00057",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00879": {
+    "sample_id": "entertainment_00879",
+    "ground_truth": "yes",
+    "text_only": "yes",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "science_00215": {
+    "sample_id": "science_00215",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_01579": {
+    "sample_id": "entertainment_01579",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "politic_00056": {
+    "sample_id": "politic_00056",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "science_00123": {
+    "sample_id": "science_00123",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "health_00831": {
+    "sample_id": "health_00831",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_01428": {
+    "sample_id": "entertainment_01428",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00261": {
+    "sample_id": "entertainment_00261",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_01016": {
+    "sample_id": "entertainment_01016",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "health_00638": {
+    "sample_id": "health_00638",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00471": {
+    "sample_id": "entertainment_00471",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "politic_00473": {
+    "sample_id": "politic_00473",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00436": {
+    "sample_id": "entertainment_00436",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00880": {
+    "sample_id": "entertainment_00880",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_01967": {
+    "sample_id": "entertainment_01967",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "health_00958": {
+    "sample_id": "health_00958",
+    "ground_truth": "yes",
+    "text_only": "yes",
+    "image_only": "yes",
+    "multimodal": "no"
+  },
+  "entertainment_00133": {
+    "sample_id": "entertainment_00133",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "technology_01285": {
+    "sample_id": "technology_01285",
+    "ground_truth": "no",
+    "text_only": "yes",
+    "image_only": "no",
+    "multimodal": "yes"
+  },
+  "entertainment_01195": {
+    "sample_id": "entertainment_01195",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_01227": {
+    "sample_id": "entertainment_01227",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "sport_00223": {
+    "sample_id": "sport_00223",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "business_00340": {
+    "sample_id": "business_00340",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "education_00163": {
+    "sample_id": "education_00163",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "science_00377": {
+    "sample_id": "science_00377",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "health_00692": {
+    "sample_id": "health_00692",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "environment_00261": {
+    "sample_id": "environment_00261",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "sport_00372": {
+    "sample_id": "sport_00372",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "health_02215": {
+    "sample_id": "health_02215",
+    "ground_truth": "no",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "yes"
+  },
+  "entertainment_03850": {
+    "sample_id": "entertainment_03850",
+    "ground_truth": "no",
+    "text_only": "yes",
+    "image_only": "no",
+    "multimodal": "yes"
+  },
+  "entertainment_01256": {
+    "sample_id": "entertainment_01256",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "technology_00293": {
+    "sample_id": "technology_00293",
+    "ground_truth": "yes",
+    "text_only": "yes",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_01567": {
+    "sample_id": "entertainment_01567",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00522": {
+    "sample_id": "entertainment_00522",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "business_00003": {
+    "sample_id": "business_00003",
+    "ground_truth": "yes",
+    "text_only": "yes",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "politic_00569": {
+    "sample_id": "politic_00569",
+    "ground_truth": "yes",
+    "text_only": "yes",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00638": {
+    "sample_id": "entertainment_00638",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "technology_00010": {
+    "sample_id": "technology_00010",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "education_00161": {
+    "sample_id": "education_00161",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "education_00141": {
+    "sample_id": "education_00141",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "sport_10792": {
+    "sample_id": "sport_10792",
+    "ground_truth": "no",
+    "text_only": "yes",
+    "image_only": "no",
+    "multimodal": "yes"
+  },
+  "business_05214": {
+    "sample_id": "business_05214",
+    "ground_truth": "no",
+    "text_only": "yes",
+    "image_only": "no",
+    "multimodal": "yes"
+  },
+  "health_00232": {
+    "sample_id": "health_00232",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00703": {
+    "sample_id": "entertainment_00703",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "sport_00284": {
+    "sample_id": "sport_00284",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_05226": {
+    "sample_id": "entertainment_05226",
+    "ground_truth": "no",
+    "text_only": "yes",
+    "image_only": "no",
+    "multimodal": "yes"
+  },
+  "sport_00491": {
+    "sample_id": "sport_00491",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00773": {
+    "sample_id": "entertainment_00773",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "sport_00316": {
+    "sample_id": "sport_00316",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "environment_00169": {
+    "sample_id": "environment_00169",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00095": {
+    "sample_id": "entertainment_00095",
+    "ground_truth": "yes",
+    "text_only": "yes",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_01335": {
+    "sample_id": "entertainment_01335",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "sport_00085": {
+    "sample_id": "sport_00085",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_01376": {
+    "sample_id": "entertainment_01376",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "health_00322": {
+    "sample_id": "health_00322",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "education_00211": {
+    "sample_id": "education_00211",
+    "ground_truth": "yes",
+    "text_only": "yes",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_01563": {
+    "sample_id": "entertainment_01563",
+    "ground_truth": "yes",
+    "text_only": "yes",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "health_02755": {
+    "sample_id": "health_02755",
+    "ground_truth": "no",
+    "text_only": "yes",
+    "image_only": "no",
+    "multimodal": "yes"
+  },
+  "entertainment_01880": {
+    "sample_id": "entertainment_01880",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "sport_00550": {
+    "sample_id": "sport_00550",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "technology_03634": {
+    "sample_id": "technology_03634",
+    "ground_truth": "no",
+    "text_only": "yes",
+    "image_only": "no",
+    "multimodal": "yes"
+  },
+  "environment_00683": {
+    "sample_id": "environment_00683",
+    "ground_truth": "no",
+    "text_only": "yes",
+    "image_only": "no",
+    "multimodal": "yes"
+  },
+  "technology_00361": {
+    "sample_id": "technology_00361",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00435": {
+    "sample_id": "entertainment_00435",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "health_00675": {
+    "sample_id": "health_00675",
+    "ground_truth": "yes",
+    "text_only": "yes",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "technology_00515": {
+    "sample_id": "technology_00515",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "education_00058": {
+    "sample_id": "education_00058",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "health_01228": {
+    "sample_id": "health_01228",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_01941": {
+    "sample_id": "entertainment_01941",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00347": {
+    "sample_id": "entertainment_00347",
+    "ground_truth": "yes",
+    "text_only": "yes",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "politic_00294": {
+    "sample_id": "politic_00294",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "science_00352": {
+    "sample_id": "science_00352",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "technology_00356": {
+    "sample_id": "technology_00356",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "technology_00259": {
+    "sample_id": "technology_00259",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00716": {
+    "sample_id": "entertainment_00716",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_04242": {
+    "sample_id": "entertainment_04242",
+    "ground_truth": "no",
+    "text_only": "yes",
+    "image_only": "no",
+    "multimodal": "yes"
+  },
+  "entertainment_00490": {
+    "sample_id": "entertainment_00490",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_01756": {
+    "sample_id": "entertainment_01756",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "sport_00626": {
+    "sample_id": "sport_00626",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "technology_00441": {
+    "sample_id": "technology_00441",
+    "ground_truth": "yes",
+    "text_only": "yes",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "technology_00045": {
+    "sample_id": "technology_00045",
+    "ground_truth": "yes",
+    "text_only": "yes",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "health_00533": {
+    "sample_id": "health_00533",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_01978": {
+    "sample_id": "entertainment_01978",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00392": {
+    "sample_id": "entertainment_00392",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_01073": {
+    "sample_id": "entertainment_01073",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00744": {
+    "sample_id": "entertainment_00744",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "politic_00534": {
+    "sample_id": "politic_00534",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "technology_00092": {
+    "sample_id": "technology_00092",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "yes",
+    "multimodal": "no"
+  },
+  "entertainment_01302": {
+    "sample_id": "entertainment_01302",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "sport_00744": {
+    "sample_id": "sport_00744",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00376": {
+    "sample_id": "entertainment_00376",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "business_00267": {
+    "sample_id": "business_00267",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00921": {
+    "sample_id": "entertainment_00921",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00265": {
+    "sample_id": "entertainment_00265",
+    "ground_truth": "yes",
+    "text_only": "yes",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "business_00046": {
+    "sample_id": "business_00046",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00695": {
+    "sample_id": "entertainment_00695",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00690": {
+    "sample_id": "entertainment_00690",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "education_00267": {
+    "sample_id": "education_00267",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "science_00012": {
+    "sample_id": "science_00012",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00806": {
+    "sample_id": "entertainment_00806",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "politic_00290": {
+    "sample_id": "politic_00290",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "health_00564": {
+    "sample_id": "health_00564",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "health_00380": {
+    "sample_id": "health_00380",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_13421": {
+    "sample_id": "entertainment_13421",
+    "ground_truth": "no",
+    "text_only": "yes",
+    "image_only": "no",
+    "multimodal": "yes"
+  },
+  "entertainment_00145": {
+    "sample_id": "entertainment_00145",
+    "ground_truth": "yes",
+    "text_only": "yes",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "sport_00197": {
+    "sample_id": "sport_00197",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_01628": {
+    "sample_id": "entertainment_01628",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "education_00057": {
+    "sample_id": "education_00057",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "health_00005": {
+    "sample_id": "health_00005",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "business_00149": {
+    "sample_id": "business_00149",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00167": {
+    "sample_id": "entertainment_00167",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_01369": {
+    "sample_id": "entertainment_01369",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "health_00778": {
+    "sample_id": "health_00778",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "sport_00745": {
+    "sample_id": "sport_00745",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00384": {
+    "sample_id": "entertainment_00384",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "science_00368": {
+    "sample_id": "science_00368",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "sport_00611": {
+    "sample_id": "sport_00611",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00594": {
+    "sample_id": "entertainment_00594",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "technology_00136": {
+    "sample_id": "technology_00136",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00605": {
+    "sample_id": "entertainment_00605",
+    "ground_truth": "yes",
+    "text_only": "yes",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "health_00134": {
+    "sample_id": "health_00134",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "sport_00535": {
+    "sample_id": "sport_00535",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "education_00128": {
+    "sample_id": "education_00128",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "politic_00527": {
+    "sample_id": "politic_00527",
+    "ground_truth": "yes",
+    "text_only": "yes",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_01214": {
+    "sample_id": "entertainment_01214",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00870": {
+    "sample_id": "entertainment_00870",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "sport_00717": {
+    "sample_id": "sport_00717",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_00503": {
+    "sample_id": "entertainment_00503",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "sport_00407": {
+    "sample_id": "sport_00407",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  },
+  "entertainment_01178": {
+    "sample_id": "entertainment_01178",
+    "ground_truth": "yes",
+    "text_only": "no",
+    "image_only": "no",
+    "multimodal": "no"
+  }
+}
