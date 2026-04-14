@@ -27,45 +27,51 @@ def main():
     total = sum(values)
 
     # Muted, conference-paper friendly palette (ColorBrewer-inspired)
-    colors = ["#8C9BAB", "#B7A99A", "#A7B7A0", "#9A8AA8", "#CFCFCF"]
+    colors = ["#6E8BA8", "#C2A878", "#8FB08C", "#9A7FB0", "#CFCFCF"]
 
     plt.rcParams.update({
         "font.family": "serif",
-        "font.size": 10,
+        "font.size": 9.5,
+        "axes.linewidth": 0.6,
+        "pdf.fonttype": 42,
+        "ps.fonttype": 42,
     })
 
-    fig, ax = plt.subplots(figsize=(5.0, 5.0), subplot_kw=dict(aspect="equal"))
+    fig, ax = plt.subplots(figsize=(5.2, 2.8), subplot_kw=dict(aspect="equal"))
 
     wedges, _ = ax.pie(
         values,
         colors=colors,
         startangle=90,
         counterclock=False,
-        wedgeprops=dict(width=0.38, edgecolor="white", linewidth=1.2),
+        wedgeprops=dict(width=0.34, edgecolor="white", linewidth=1.0),
     )
 
     legend_labels = [
-        f"{lab}  {v/total*100:.1f}%  (n={v})"
+        f"{lab}   {v/total*100:4.1f}%   n = {v}"
         for lab, v in zip(labels, values)
     ]
     ax.legend(
         wedges,
         legend_labels,
         loc="center left",
-        bbox_to_anchor=(1.0, 0.5),
+        bbox_to_anchor=(1.02, 0.5),
         frameon=False,
-        handlelength=1.2,
-        handleheight=1.2,
+        handlelength=1.1,
+        handleheight=1.1,
         borderpad=0.0,
-        labelspacing=0.8,
+        labelspacing=0.7,
+        fontsize=9.5,
     )
 
-    ax.text(0, 0, f"N = {total}", ha="center", va="center",
-            fontsize=12, color="#444444")
+    ax.text(0, 0.08, f"{total}", ha="center", va="center",
+            fontsize=16, color="#2B2B2B")
+    ax.text(0, -0.14, "samples", ha="center", va="center",
+            fontsize=8.5, color="#707070", style="italic")
 
-    plt.tight_layout()
-    plt.savefig(OUTPUT_PATH, bbox_inches="tight", dpi=300)
-    plt.savefig(OUTPUT_PATH.with_suffix(".png"), bbox_inches="tight", dpi=300)
+    fig.savefig(OUTPUT_PATH, bbox_inches="tight", pad_inches=0.02, dpi=1200)
+    fig.savefig(OUTPUT_PATH.with_suffix(".png"),
+                bbox_inches="tight", pad_inches=0.02, dpi=1200)
     print(f"Saved {OUTPUT_PATH}")
 
 

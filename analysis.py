@@ -30,15 +30,23 @@ def classify(sample):
 def text_modification():
     # TODO: this function modifies a sample that is classified as U2 in the base dataset.
     # TODO 1: identify all samples that are U1.
-    # TODO 2: use the text modality, for the same sample_id, from these json files: generated_text/gpt-5.4_low.json, generated_text/gpt-5.4_med.json, generated_text/gpt-5.4_none.json
-    # TODO 3: run classify on these samples again 
-    # TODO 4: compare the change in classification from U1 to {R, U2, S} --> print out the percentage changed to redundancy, changed to U2, and changed to S. also print out the change in error.
-    # TODO 5: save a new file modified_u2_{reasoning_level: none, low, med}.json with all the samples, but update the samples that were modified with the new classification.
-    
+    # TODO 2: for these identified samples, classify the interactions from these results - json files: generated_text/gpt-5.4_low.json, generated_text/gpt-5.4_med.json, generated_text/gpt-5.4_none.json
+    # TODO 3: compare the change in classification from U1 to {R, U2, S} --> print out the percentage changed to redundancy, changed to U2, and changed to S. also print out the change in error.
+    # TODO 4: print out the change in classifications for these samples.
+    pass
+
 
 def s_created():
-    # TODO: this function computes the amount of synergy created due to a modification.
+    """We compute the overall synergy in a dataset using the taxonomy (Table~\ref{tab:taxonomy}) and definition in Section~\ref{sec:task_def}. For simplicity, we compute this term with the fraction of synergistic samples over the size (number of samples) of the entire dataset:
     
+    $$\text{Overall Synergy} = \frac{|\text{Synergistic Samples}|}{|\mathcal{D}|} \in [0,1]$$
+    With this expression, we can compute $S_{base}$ and $S_{mod}$: the overall synergy in the base and modified dataset (from our experiments) respectively. Subsequently, we assign a score, $S_{created}\in [0,1]$:
+    
+    $$\Delta S = S_{mod} - S_{base}\quad s.t.\ S_{mod}\ge S_{base}$$
+    $S_{created} = \frac{\Delta S}{1 - S_{base}}$$"""
+    
+    # TODO: this function computes the amount of synergy created due to a modification.
+    pass
 
 
 def main():
