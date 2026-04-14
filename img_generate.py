@@ -9,6 +9,7 @@ from __future__ import annotations
 import os
 import argparse
 import json
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any, Callable
 
@@ -93,15 +94,23 @@ def generate_synergy(
     save_dir: str | Path,
     results: dict[str, str] | None = None,
     on_progress: ProgressCallback | None = None,
+    max_workers: int = 4,
 ) -> dict[str, str]:
-    """Run synergy generation."""
+    """Run synergy generation with parallel inference via ThreadPoolExecutor."""
     if results is None:
         results = {}
 
     image_root = Path(image_dir)
     total = len(dataset)
 
-    for index, (sample_id, sample) in tqdm(enumerate(dataset.items(), start=1), total=total, desc="Generating synergy"):
+    # Separate already-done samples from those that need inference.
+    pending: list[tuple[str, str, Path]] = []  # (sample_id, text, image_path)
+    for sample_id, sample in dataset.items():
+        output_path = Path(save_dir) / f"{sample_id}.jpg"
+        if os.path.exists(output_path):
+            results[sample_id] = str(output_path)
+            continue
+
         text = sample.get("text")
         img_name = sample.get("img_name")
 
@@ -114,17 +123,42 @@ def generate_synergy(
             if not image_path.exists():
                 results[sample_id] = "unknown"
             else:
-                raw_output = model.inference(text=text, image=image_path)
+                pending.append((sample_id, text, image_path))
+
+    def _infer(sample_id: str, text: str, image_path: Path) -> tuple[str, bytes | None]:
+        return sample_id, model.inference(text=text, image=image_path)
+
+    completed_count = len(results)  # already-done samples count toward progress
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        future_to_id = {
+            executor.submit(_infer, sample_id, text, image_path): sample_id
+            for sample_id, text, image_path in pending
+        }
+
+        with tqdm(total=total, desc="Generating synergy", initial=completed_count) as pbar:
+            for future in as_completed(future_to_id):
+                sample_id = future_to_id[future]
+                output_path = Path(save_dir) / f"{sample_id}.jpg"
+                completed_count += 1
+
+                try:
+                    _, raw_output = future.result()
+                except Exception as exc:
+                    print(f"[{sample_id}] inference raised: {exc}")
+                    raw_output = None
+
                 if raw_output is None:
                     results[sample_id] = "unknown"
                 else:
-                    output_path = Path(save_dir) / f"{sample_id}.jpg"
                     with open(output_path, "wb") as img_file:
                         img_file.write(raw_output)
                     results[sample_id] = str(output_path)
 
-        if on_progress is not None:
-            on_progress("synergy generation", index, total)
+                pbar.update(1)
+
+                if on_progress is not None:
+                    on_progress("synergy generation", completed_count, total)
 
     return results
 
@@ -136,6 +170,8 @@ def aggregate_response(
 ) -> dict[str, dict[str, Any]]:
     output: dict[str, dict[str, Any]] = {}
     for sample_id, sample in dataset.items():
+        if sample_id not in synergy_response:
+            continue
         output[sample_id] = {
             "sample_id": sample_id,
             "text": sample.get("text", ""),
@@ -205,7 +241,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--generated-image-dir",
         type=Path,
-        default=Path('generated_img'),
+        default=Path('generated_images'),
         help="Directory to save generated images.",
     )
     parser.add_argument(
@@ -217,8 +253,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--checkpoint-every",
         type=int,
-        default=250,
+        default=10,
         help="Save partial results every N sample evaluations (0 disables checkpointing).",
+    )
+    parser.add_argument(
+        "--max-workers",
+        type=int,
+        default=4,
+        help="Number of parallel inference threads (default: 4).",
     )
     return parser.parse_args()
 
@@ -242,6 +284,7 @@ def run_generation(args: argparse.Namespace) -> dict[str, Any]:
         "generated_image_dir": str(args.generated_image_dir),
         "limit": args.limit,
         "checkpoint_every": args.checkpoint_every,
+        "max_workers": args.max_workers,
     }
 
     synergy_response: dict[str, str] = {}
@@ -288,6 +331,7 @@ def run_generation(args: argparse.Namespace) -> dict[str, Any]:
             save_dir=args.generated_image_dir,
             results=synergy_response,
             on_progress=checkpoint_callback,
+            max_workers=args.max_workers,
         )
     except Exception as exc:
         failure_payload = build_response_payload(
