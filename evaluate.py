@@ -362,6 +362,35 @@ def parse_args() -> argparse.Namespace:
             "into the final output, so you can skip re-running image_only."
         ),
     )
+    parser.add_argument(
+        "--text-results-from",
+        type=Path,
+        default=None,
+        help=(
+            "Optional path to a prior results JSON. The 'text_only' predictions "
+            "(yes/no) from that file are loaded into the final output, so you "
+            "can skip re-running text_only (mirror of --image-results-from)."
+        ),
+    )
+    parser.add_argument(
+        "--filter-interactions",
+        type=str,
+        default=None,
+        help=(
+            "Comma-separated interaction labels (e.g. 'U1' or 'U1,S') to keep. "
+            "Requires --interaction-source (or --text-results-from) pointing to "
+            "a results JSON with per-sample 'interaction' fields."
+        ),
+    )
+    parser.add_argument(
+        "--interaction-source",
+        type=Path,
+        default=None,
+        help=(
+            "Optional explicit path to the results JSON used for --filter-interactions. "
+            "Defaults to --text-results-from when omitted."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -376,6 +405,37 @@ def load_image_only_results(path: Path) -> dict[str, str]:
         if value in ("yes", "no"):
             image_results[sample_id] = value
     return image_results
+
+
+def load_text_only_results(path: Path) -> dict[str, str]:
+    """Extract yes/no text_only predictions from a prior results JSON."""
+    with path.open("r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    text_results: dict[str, str] = {}
+    for sample_id, result in data.get("results", {}).items():
+        value = result.get("text_only")
+        if value in ("yes", "no"):
+            text_results[sample_id] = value
+    return text_results
+
+
+def filter_by_interaction(
+    dataset: dict[str, dict[str, Any]],
+    source_path: Path,
+    labels: set[str],
+) -> dict[str, dict[str, Any]]:
+    """Keep only dataset samples whose 'interaction' in source_path matches labels."""
+    with source_path.open("r", encoding="utf-8") as f:
+        source = json.load(f)
+
+    interactions = source.get("results", {})
+    keep: dict[str, dict[str, Any]] = {}
+    for sample_id, sample in dataset.items():
+        entry = interactions.get(sample_id)
+        if isinstance(entry, dict) and entry.get("interaction") in labels:
+            keep[sample_id] = sample
+    return keep
 
 
 def apply_text_override(
@@ -422,6 +482,21 @@ def run_evaluation(args: argparse.Namespace) -> dict[str, Any]:
     if args.text_override is not None:
         dataset = apply_text_override(dataset, args.text_override)
 
+    if args.filter_interactions:
+        labels = {lbl.strip() for lbl in args.filter_interactions.split(",") if lbl.strip()}
+        source = args.interaction_source or args.text_results_from
+        if source is None:
+            raise ValueError(
+                "--filter-interactions requires --interaction-source "
+                "(or --text-results-from) to point at a results JSON."
+            )
+        before = len(dataset)
+        dataset = filter_by_interaction(dataset, source, labels)
+        print(
+            f"[filter] Kept {len(dataset)}/{before} samples with interaction in "
+            f"{sorted(labels)} (source={source})."
+        )
+
     if args.limit and args.limit > 0: # set limits for tests
         limited_items = list(dataset.items())[: args.limit]
         dataset = dict(limited_items)
@@ -447,6 +522,13 @@ def run_evaluation(args: argparse.Namespace) -> dict[str, Any]:
         "image_results_from": (
             str(args.image_results_from) if args.image_results_from else None
         ),
+        "text_results_from": (
+            str(args.text_results_from) if args.text_results_from else None
+        ),
+        "filter_interactions": args.filter_interactions,
+        "interaction_source": (
+            str(args.interaction_source) if args.interaction_source else None
+        ),
     }
 
     text_results: dict[str, str] = {}
@@ -471,6 +553,15 @@ def run_evaluation(args: argparse.Namespace) -> dict[str, Any]:
         print(
             f"[image-reuse] Loaded {len(reused)} image_only predictions from "
             f"{args.image_results_from}; {len(image_results)} total in image_results."
+        )
+
+    if args.text_results_from is not None:
+        reused = load_text_only_results(args.text_results_from)
+        for sample_id, value in reused.items():
+            text_results.setdefault(sample_id, value)
+        print(
+            f"[text-reuse] Loaded {len(reused)} text_only predictions from "
+            f"{args.text_results_from}; {len(text_results)} total in text_results."
         )
 
     total_steps = len(dataset) * len(selected_modes)
