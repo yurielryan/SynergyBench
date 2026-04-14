@@ -51,9 +51,11 @@ where:
 - $S_{mod}$ is the synergy score computed on $\mathcal{D'}$
 
 Current repository status:
-- This repo provides the core inference pipeline to obtain text-only, image-only,
-  and multimodal predictions needed for synergy computation.
-- You can then compute $S_{base}$ and $S_{mod}$ downstream from the saved outputs.
+- `evaluate.py` provides the core inference pipeline to obtain text-only,
+  image-only, and multimodal predictions needed for synergy computation.
+- `analysis.py` classifies each sample into interaction categories
+  (`R`, `U1`, `U2`, `S`, `error`) and computes $S_{base}$, $S_{mod}$,
+  $\Delta S$, and $S_{created}$ directly from saved result JSONs.
 
 ## Dataset Source
 
@@ -67,10 +69,12 @@ Please follow DocMSU's license and usage terms when downloading and redistributi
 ```text
 SynergyBench/
 ├── evaluate.py                         # Main evaluation script
+├── analysis.py                         # Interaction classification + synergy metrics
 ├── curate_dataset.py                   # Split curation - train/val/test
 ├── docmsu_all.json                     # Base dataset
 ├── docmsu_2500_split.json              # Curated balanced split file
-├── img/                                
+├── img/
+├── results/                            # Evaluation outputs + checkpoints
 ├── evaluator_models/
 │   ├── base_model_evaluation.py        # Abstract evaluator interface
 │   ├── openai.py                       # Example implementation
@@ -163,6 +167,24 @@ Default configuration:
 - `--output`: output JSON path
 - `--provider`: evaluator provider (currently `openai`)
 - `--limit`: optional sample limit for quick smoke tests
+- `--modes`: comma-separated subset of `text_only,image_only,multimodal`
+  to run (default: all three)
+- `--checkpoint-every`: save partial results every N evaluations
+  (default `250`; `0` disables checkpointing)
+- `--resume`: resume from an existing checkpoint at `--output`
+- `--text-override`: path to a generated-text JSON
+  (`{"response": {sample_id: {"context": "..."}}}`) whose `context`
+  replaces each sample's `text` before evaluation — used to evaluate
+  modified-text datasets $\mathcal{D'}$
+- `--image-results-from`: reuse `image_only` predictions from a prior
+  results JSON (skips re-running image-only on unchanged images)
+- `--text-results-from`: mirror of the above for `text_only`
+- `--filter-interactions`: comma-separated labels (e.g. `U2` or `U1,S`)
+  to keep; requires `--interaction-source` (or `--text-results-from`)
+  to point at a results JSON with per-sample `interaction` fields
+  (populated by `analysis.py`)
+- `--interaction-source`: explicit path to the results JSON used for
+  `--filter-interactions` (defaults to `--text-results-from`)
 
 ## Model Backends
 
@@ -215,6 +237,59 @@ Example shape:
   }
 }
 ```
+
+## 7) Analyze Interactions and Synergy Creation
+
+Once you have at least a base results JSON (and optionally one or more
+modified-dataset results JSONs), run `analysis.py` to classify each
+sample and compute synergy creation scores.
+
+Configure the paths at the top of `analysis.py`:
+
+```python
+INPUT_PATH = Path("results/base_dataset.json")
+ERROR_PATH = Path("results/erroneous.json")
+
+MODIFIED_PATHS = {
+    "low":  Path("results/gpt-5.4_low_eval.json"),
+    "med":  Path("results/gpt-5.4_med_eval.json"),
+    "none": Path("results/gpt-5.4_none_eval.json"),
+}
+```
+
+Then run:
+
+```bash
+python analysis.py
+```
+
+What `analysis.py` does:
+
+- **`classify(sample)`**: maps each `{ground_truth, text_only,
+  image_only, multimodal}` tuple to one of:
+  - `R`  — redundant (both unimodal correct, multimodal correct)
+  - `U1` — image-only unique (image correct, text wrong, multimodal correct)
+  - `U2` — text-only unique (text correct, image wrong, multimodal correct)
+  - `S`  — synergistic (both unimodal wrong, multimodal correct)
+  - `error` — anything else (e.g. multimodal wrong)
+- Writes `interaction` labels back into `INPUT_PATH` for every
+  non-`error` sample (enabling `--filter-interactions` in `evaluate.py`).
+- Dumps all `error` samples to `ERROR_PATH`.
+- **`text_modification(...)`**: for each modified results JSON, reports
+  how base-dataset `U2` samples are re-classified after text
+  modification (useful for measuring synergy created by text edits).
+- **`s_created(...)`**: computes
+  $S_{base}$, $S_{mod}$, $\Delta S$, and
+  $S_{created} = \max(0, \Delta S) / (1 - S_{base})$ for each
+  modified dataset.
+
+Typical workflow:
+
+1. Run `evaluate.py` on the base dataset → `results/base_dataset.json`.
+2. Run `evaluate.py` with `--text-override` on each modified-text JSON
+   → `results/<variant>_eval.json`.
+3. Update paths in `analysis.py` and run it to label interactions and
+   print synergy creation scores.
 
 ## Reproducibility Notes
 
