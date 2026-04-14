@@ -1,4 +1,5 @@
 import json
+import math
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -8,7 +9,17 @@ from analysis import classify
 
 INPUT_PATH = Path("results/base_dataset.json")
 OUTPUT_PATH = Path("results/interaction_donut.pdf")
+GRID_OUTPUT_PATH = Path("results/interaction_donut_grid.pdf")
 TEXTMOD_OUTPUT_PATH = Path("results/text_modification.pdf")
+
+EVAL_PATHS = [
+    ("None",   Path("results/gpt-5.4_none_eval.json")),
+    ("Low",    Path("results/gpt-5.4_low_eval.json")),
+    ("Medium", Path("results/gpt-5.4_med_eval.json")),
+]
+
+LABELS = ["Redundant", "Unique (X1)", "Unique (X2)", "Synergistic", "Error"]
+KEYS   = ["R", "U1", "U2", "S", "error"]
 
 PALETTE = {
     "R": "#6E8BA8",
@@ -30,29 +41,34 @@ def _apply_rc():
     })
 
 
-def compute_counts():
-    with open(INPUT_PATH) as f:
-        data = json.load(f)
-    counts = {"R": 0, "U1": 0, "U2": 0, "S": 0, "error": 0}
-    for sample in data["results"].values():
+def _load_results(path):
+    with open(path) as f:
+        return json.load(f)["results"]
+
+
+def compute_counts(path=INPUT_PATH):
+    results = _load_results(path)
+    counts = {k: 0 for k in KEYS}
+    for sample in results.values():
         counts[classify(sample)] += 1
     return counts
 
 
-def main():
-    counts = compute_counts()
+def compute_counts_merged(eval_path, base_path=INPUT_PATH):
+    """For samples classified as U2 in base, substitute the eval sample; else keep base."""
+    base = _load_results(base_path)
+    evl = _load_results(eval_path)
+    counts = {k: 0 for k in KEYS}
+    for sid, base_sample in base.items():
+        sample = evl[sid] if classify(base_sample) == "U2" and sid in evl else base_sample
+        counts[classify(sample)] += 1
+    return counts
 
-    labels = ["Redundant", "Unique (X1)", "Unique (X2)", "Synergistic", "Error"]
-    keys = ["R", "U1", "U2", "S", "error"]
-    values = [counts[k] for k in keys]
+
+def _draw_donut(ax, counts, center_label=None, outside_labels=True):
+    values = [counts[k] for k in KEYS]
     total = sum(values)
-
-    colors = [PALETTE[k] for k in keys]
-
-    _apply_rc()
-
-    fig, ax = plt.subplots(figsize=(5.2, 2.8), subplot_kw=dict(aspect="equal"))
-
+    colors = [PALETTE[k] for k in KEYS]
     wedges, _ = ax.pie(
         values,
         colors=colors,
@@ -60,10 +76,46 @@ def main():
         counterclock=False,
         wedgeprops=dict(width=0.34, edgecolor="white", linewidth=1.0),
     )
+    ax.text(0, 0.10, f"{total}", ha="center", va="center",
+            fontsize=13, color="#2B2B2B")
+    ax.text(0, -0.13, center_label or "samples", ha="center", va="center",
+            fontsize=8, color="#707070", style="italic")
+
+    if outside_labels:
+        for w, key, v in zip(wedges, KEYS, values):
+            if key == "error" or v == 0:
+                continue
+            pct = v / total * 100
+            if pct < 0.8:  # skip to avoid crowding; label would be ambiguous anyway
+                continue
+            # Bias R toward the lower end of its wedge so it never collides with
+            # labels above (U2/S sit on the upper-left in this dataset).
+            frac = 0.15 if key == "R" else 0.5
+            ang_deg = w.theta1 + frac * (w.theta2 - w.theta1)
+            ang = math.radians(ang_deg)
+            x, y = 1.14 * math.cos(ang), 1.14 * math.sin(ang)
+            ha = "left" if x >= 0 else "right"
+            ax.text(x, y, f"{pct:.1f}%", ha=ha, va="center",
+                    fontsize=8.5, color="#2B2B2B")
+        ax.set_xlim(-1.35, 1.35)
+        ax.set_ylim(-1.25, 1.25)
+    return wedges, values, total
+
+
+def main():
+    _apply_rc()
+
+    # ---- Standalone donut for the base dataset ----
+    counts = compute_counts(INPUT_PATH)
+    values = [counts[k] for k in KEYS]
+    total = sum(values)
+
+    fig, ax = plt.subplots(figsize=(5.2, 2.8), subplot_kw=dict(aspect="equal"))
+    wedges, _, _ = _draw_donut(ax, counts)
 
     legend_labels = [
         f"{lab}   {v/total*100:4.1f}%   n = {v}"
-        for lab, v in zip(labels, values)
+        for lab, v in zip(LABELS, values)
     ]
     ax.legend(
         wedges,
@@ -78,15 +130,51 @@ def main():
         fontsize=9.5,
     )
 
-    ax.text(0, 0.08, f"{total}", ha="center", va="center",
-            fontsize=16, color="#2B2B2B")
-    ax.text(0, -0.14, "samples", ha="center", va="center",
-            fontsize=8.5, color="#707070", style="italic")
-
     fig.savefig(OUTPUT_PATH, bbox_inches="tight", pad_inches=0.02, dpi=1200)
     fig.savefig(OUTPUT_PATH.with_suffix(".png"),
                 bbox_inches="tight", pad_inches=0.02, dpi=1200)
     print(f"Saved {OUTPUT_PATH}")
+
+    # ---- Comparison grid: Base + 3 reasoning levels (U2 -> eval, else base) ----
+    panels = [("Base", counts)] + [
+        (name, compute_counts_merged(path)) for name, path in EVAL_PATHS
+    ]
+
+    fig, axes = plt.subplots(
+        1, len(panels),
+        figsize=(10.4, 3.0),
+        subplot_kw=dict(aspect="equal"),
+        gridspec_kw={"wspace": 0.15},
+    )
+
+    grid_wedges = None
+    for ax_i, (name, c) in zip(axes, panels):
+        w, _, _ = _draw_donut(ax_i, c)
+        grid_wedges = w
+        subtitle = "base dataset" if name == "Base" else f"U2 re-eval @ {name.lower()}"
+        ax_i.set_title(f"{name}\n({subtitle})", fontsize=10, pad=6)
+
+    legend_labels_simple = [
+        f"{lab}  ({k})" if k != "error" else lab
+        for lab, k in zip(LABELS, KEYS)
+    ]
+    fig.legend(
+        grid_wedges,
+        legend_labels_simple,
+        loc="lower center",
+        bbox_to_anchor=(0.5, -0.02),
+        ncol=len(LABELS),
+        frameon=False,
+        handlelength=1.1,
+        handleheight=1.1,
+        columnspacing=1.6,
+        fontsize=9.5,
+    )
+
+    fig.savefig(GRID_OUTPUT_PATH, bbox_inches="tight", pad_inches=0.04, dpi=300)
+    fig.savefig(GRID_OUTPUT_PATH.with_suffix(".png"),
+                bbox_inches="tight", pad_inches=0.04, dpi=300)
+    print(f"Saved {GRID_OUTPUT_PATH}")
 
 
 def plot_text_modification():
@@ -200,4 +288,4 @@ def plot_text_modification():
 
 if __name__ == "__main__":
     main()
-    plot_text_modification()
+    # plot_text_modification()
