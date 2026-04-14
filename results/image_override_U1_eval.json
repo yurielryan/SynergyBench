@@ -1,0 +1,106 @@
+{
+  "run_config": {
+    "dataset": "docmsu_2500_split.json",
+    "split": "all",
+    "image_dir": "generated_images",
+    "output": "results/image_override_U1_eval.json",
+    "provider": "openai",
+    "limit": 0,
+    "checkpoint_every": 250,
+    "text_override": null,
+    "modes": [
+      "image_only",
+      "multimodal"
+    ],
+    "image_results_from": null,
+    "text_results_from": "results/base_dataset.json",
+    "filter_interactions": "U1",
+    "interaction_source": "results/base_dataset.json"
+  },
+  "results": {
+    "entertainment_07020": {
+      "sample_id": "entertainment_07020",
+      "ground_truth": "no",
+      "text_only": "yes",
+      "image_only": "no",
+      "multimodal": "no"
+    },
+    "science_00239": {
+      "sample_id": "science_00239",
+      "ground_truth": "yes",
+      "text_only": "no",
+      "image_only": "no",
+      "multimodal": "yes"
+    },
+    "politic_00481": {
+      "sample_id": "politic_00481",
+      "ground_truth": "yes",
+      "text_only": "no",
+      "image_only": "no",
+      "multimodal": "no"
+    },
+    "health_02704": {
+      "sample_id": "health_02704",
+      "ground_truth": "no",
+      "text_only": "yes",
+      "image_only": "no",
+      "multimodal": "yes"
+    },
+    "politic_00209": {
+      "sample_id": "politic_00209",
+      "ground_truth": "yes",
+      "text_only": "no",
+      "image_only": "no",
+      "multimodal": "yes"
+    },
+    "entertainment_01427": {
+      "sample_id": "entertainment_01427",
+      "ground_truth": "yes",
+      "text_only": "no",
+      "image_only": "no",
+      "multimodal": "yes"
+    },
+    "entertainment_01167": {
+      "sample_id": "entertainment_01167",
+      "ground_truth": "yes",
+      "text_only": "no",
+      "image_only": "no",
+      "multimodal": "yes"
+    },
+    "technology_00077": {
+      "sample_id": "technology_00077",
+      "ground_truth": "yes",
+      "text_only": "no",
+      "image_only": "no",
+      "multimodal": "yes"
+    },
+    "business_00228": {
+      "sample_id": "business_00228",
+      "ground_truth": "yes",
+      "text_only": "no",
+      "image_only": "no",
+      "multimodal": "no"
+    },
+    "health_01182": {
+      "sample_id": "health_01182",
+      "ground_truth": "yes",
+      "text_only": "no",
+      "image_only": "no",
+      "multimodal": "yes"
+    },
+    "entertainment_01371": {
+      "sample_id": "entertainment_01371",
+      "ground_truth": "yes",
+      "text_only": "no",
+      "image_only": "no",
+      "multimodal": "yes"
+    },
+    "politic_00147": {
+      "sample_id": "politic_00147",
+      "ground_truth": "yes",
+      "text_only": "no",
+      "image_only": "no",
+      "multimodal": "yes"
+    }
+  }
+}
