@@ -11,6 +11,7 @@ INPUT_PATH = Path("results/base_dataset.json")
 OUTPUT_PATH = Path("results/interaction_donut.pdf")
 GRID_OUTPUT_PATH = Path("results/interaction_donut_grid.pdf")
 TEXTMOD_OUTPUT_PATH = Path("results/text_modification.pdf")
+COMBINED_OUTPUT_PATH = Path("results/figure6_combined.pdf")
 
 EVAL_PATHS = [
     ("None",   Path("results/gpt-5.4_none_eval.json")),
@@ -136,16 +137,35 @@ def main():
     print(f"Saved {OUTPUT_PATH}")
 
     # ---- Comparison grid: Base + 3 reasoning levels (U2 -> eval, else base) ----
-    panels = [("Base", counts)] + [
+    fig = plt.figure(figsize=(10.4, 3.0))
+    _render_donut_grid(fig, base_counts=counts)
+    fig.savefig(GRID_OUTPUT_PATH, bbox_inches="tight", pad_inches=0.04, dpi=300)
+    fig.savefig(GRID_OUTPUT_PATH.with_suffix(".png"),
+                bbox_inches="tight", pad_inches=0.04, dpi=300)
+    print(f"Saved {GRID_OUTPUT_PATH}")
+
+
+def _render_donut_grid(parent, base_counts=None, axes=None, legend_anchor=(0.5, -0.02)):
+    """Render the Base + 3-reasoning-level donut grid.
+
+    `parent` is a Figure or SubFigure (used for the shared legend). If `axes`
+    is provided, it must be an array of 4 axes (already created, e.g. from a
+    shared GridSpec) — otherwise the parent's own subplots are created.
+    """
+    if base_counts is None:
+        base_counts = compute_counts(INPUT_PATH)
+    panels = [("Base", base_counts)] + [
         (name, compute_counts_merged(path)) for name, path in EVAL_PATHS
     ]
-
-    fig, axes = plt.subplots(
-        1, len(panels),
-        figsize=(10.4, 3.0),
-        subplot_kw=dict(aspect="equal"),
-        gridspec_kw={"wspace": 0.15},
-    )
+    if axes is None:
+        axes = parent.subplots(
+            1, len(panels),
+            subplot_kw=dict(aspect="equal"),
+            gridspec_kw={"wspace": 0.15},
+        )
+    else:
+        for ax_i in axes:
+            ax_i.set_aspect("equal")
 
     grid_wedges = None
     for ax_i, (name, c) in zip(axes, panels):
@@ -158,11 +178,11 @@ def main():
         f"{lab}  ({k})" if k != "error" else lab
         for lab, k in zip(LABELS, KEYS)
     ]
-    fig.legend(
+    parent.legend(
         grid_wedges,
         legend_labels_simple,
         loc="lower center",
-        bbox_to_anchor=(0.5, -0.02),
+        bbox_to_anchor=legend_anchor,
         ncol=len(LABELS),
         frameon=False,
         handlelength=1.1,
@@ -171,14 +191,25 @@ def main():
         fontsize=9.5,
     )
 
-    fig.savefig(GRID_OUTPUT_PATH, bbox_inches="tight", pad_inches=0.04, dpi=300)
-    fig.savefig(GRID_OUTPUT_PATH.with_suffix(".png"),
-                bbox_inches="tight", pad_inches=0.04, dpi=300)
-    print(f"Saved {GRID_OUTPUT_PATH}")
-
 
 def plot_text_modification():
     """Visualize text-modification results: U2 transitions and synergy rate lift."""
+    _apply_rc()
+    fig = plt.figure(figsize=(9.6, 3.0))
+    axes = fig.subplots(
+        1, 2,
+        gridspec_kw={"width_ratios": [1.35, 1.0], "wspace": 0.35},
+    )
+    _render_text_modification(axes[0], axes[1])
+
+    fig.savefig(TEXTMOD_OUTPUT_PATH, bbox_inches="tight",
+                pad_inches=0.03, dpi=300)
+    fig.savefig(TEXTMOD_OUTPUT_PATH.with_suffix(".png"),
+                bbox_inches="tight", pad_inches=0.03, dpi=300)
+    print(f"Saved {TEXTMOD_OUTPUT_PATH}")
+
+
+def _render_text_modification(ax1, ax2):
     levels = ["None", "Low", "Medium"]  # low reasoning -> high, left to right
 
     # U2 transitions (from base U2, n=813). R and U1 are 0 across all levels; omitted.
@@ -187,19 +218,15 @@ def plot_text_modification():
     to_s    = np.array([161, 171, 170])
     to_err  = np.array([190, 148, 220])
 
-    # Dataset-wide synergy rates (N=2500)
-    N = 2500
-    s_base_count = 119
-    s_mod_counts = np.array([225, 248, 245])  # none, low, med
+    # Dataset-wide synergy rates, computed from merged data so they match the donut grid:
+    # for base-U2 samples, substitute the eval sample; otherwise keep the base sample.
+    base_counts = compute_counts(INPUT_PATH)
+    N = sum(base_counts.values())
+    s_base_count = base_counts["S"]
+    merged_by_level = {name: compute_counts_merged(path) for name, path in EVAL_PATHS}
+    s_mod_counts = np.array([merged_by_level[name]["S"] for name in levels])
     s_base_rate = s_base_count / N * 100
     s_mod_rates = s_mod_counts / N * 100
-
-    _apply_rc()
-
-    fig, (ax1, ax2) = plt.subplots(
-        1, 2, figsize=(9.6, 3.0),
-        gridspec_kw={"width_ratios": [1.35, 1.0], "wspace": 0.35},
-    )
 
     # ---------- Panel A: stacked horizontal transitions ----------
     y = np.arange(len(levels))
@@ -233,7 +260,7 @@ def plot_text_modification():
     ax1.spines["top"].set_visible(False)
     ax1.spines["right"].set_visible(False)
     ax1.tick_params(length=3)
-    ax1.set_title(f"(a) Outcomes after text modification  (n = {n_u2})",
+    ax1.set_title(f"6(a) Outcomes after text modification  (n = {n_u2})",
                   fontsize=10, pad=8, loc="left")
     ax1.legend(loc="upper center", bbox_to_anchor=(0.5, -0.22),
                ncol=3, frameon=False, fontsize=9, handlelength=1.2,
@@ -268,24 +295,65 @@ def plot_text_modification():
     ax2.set_xticks(x)
     ax2.set_xticklabels(levels)
     ax2.set_xlabel("Reasoning effort")
-    ax2.set_ylabel("Synergistic rate (%)")
+    ax2.set_ylabel("Synergy (%)")
     ax2.set_ylim(0, ymax)
     ax2.spines["top"].set_visible(False)
     ax2.spines["right"].set_visible(False)
     ax2.tick_params(length=3)
-    ax2.set_title("(b) Dataset-wide synergy rate",
+    ax2.set_title("6(b) Dataset-wide Synergy",
                   fontsize=10, pad=8, loc="left")
     ax2.legend(loc="upper center", bbox_to_anchor=(0.5, -0.22),
                ncol=2, frameon=False, fontsize=9,
                handlelength=1.2, handleheight=1.1, columnspacing=1.4)
 
-    fig.savefig(TEXTMOD_OUTPUT_PATH, bbox_inches="tight",
-                pad_inches=0.03, dpi=300)
-    fig.savefig(TEXTMOD_OUTPUT_PATH.with_suffix(".png"),
-                bbox_inches="tight", pad_inches=0.03, dpi=300)
-    print(f"Saved {TEXTMOD_OUTPUT_PATH}")
+
+def plot_combined():
+    """Stack the donut grid (top) and text-modification panels (bottom)
+    inside a single GridSpec so both rows share identical left/right margins."""
+    _apply_rc()
+    fig = plt.figure(figsize=(10.4, 7.0))
+
+    outer = fig.add_gridspec(
+        2, 1,
+        height_ratios=[1.0, 1.05],
+        hspace=0.25,
+        left=0.07, right=0.985, top=0.95, bottom=0.16,
+    )
+    top_gs = outer[0].subgridspec(1, 4, wspace=0.15)
+    bot_gs = outer[1].subgridspec(1, 2, width_ratios=[1.35, 1.0], wspace=0.30)
+
+    top_axes = [fig.add_subplot(top_gs[0, i]) for i in range(4)]
+    bot_axes = [fig.add_subplot(bot_gs[0, i]) for i in range(2)]
+
+    # Use a per-row legend anchor expressed in *figure* coords, aligned to the
+    # top row's vertical span so it sits just below the donuts.
+    top_bbox = top_gs.get_grid_positions(fig)  # (bottoms, tops, lefts, rights)
+    top_bottom = float(top_bbox[0][0])
+    top_left = float(top_bbox[2][0])
+    top_right = float(top_bbox[3][-1])
+    legend_x = 0.5 * (top_left + top_right)
+    legend_y = top_bottom - 0.02
+
+    _render_donut_grid(
+        fig, axes=top_axes,
+        legend_anchor=(legend_x, legend_y),
+    )
+    # Move to figure-coord legend by re-anchoring after creation
+    fig.legends[-1].set_bbox_to_anchor((legend_x, legend_y),
+                                       transform=fig.transFigure)
+
+    _render_text_modification(bot_axes[0], bot_axes[1])
+
+    fig.savefig(COMBINED_OUTPUT_PATH,
+                bbox_inches="tight", pad_inches=0.04)  # vector PDF
+    fig.savefig(COMBINED_OUTPUT_PATH.with_suffix(".svg"),
+                bbox_inches="tight", pad_inches=0.04)  # vector SVG
+    fig.savefig(COMBINED_OUTPUT_PATH.with_suffix(".png"),
+                bbox_inches="tight", pad_inches=0.04, dpi=1200)
+    print(f"Saved {COMBINED_OUTPUT_PATH}")
 
 
 if __name__ == "__main__":
-    main()
+    # main()
     # plot_text_modification()
+    plot_combined()
