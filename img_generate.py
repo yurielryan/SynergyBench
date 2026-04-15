@@ -1,7 +1,5 @@
-"""Evaluation pipeline for sarcasm classification with evaluator model backends.
-
-Expected evaluator model interface:
-    model.evaluate(text: str | None, image: str | Path | None) -> str
+"""
+Generation pipeline for image-based synergy generation.
 """
 
 from __future__ import annotations
@@ -14,6 +12,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from image_generator_models.openai import load_openai_image_generator
+from image_generator_models.gemini import load_gemini_image_generator
 from dotenv import load_dotenv
 from tqdm import tqdm
 
@@ -81,6 +80,8 @@ def init_generator_model(
     provider_name = args.provider.lower()
     if provider_name == "openai":
         return load_openai_image_generator()
+    elif provider_name == "google":
+        return load_gemini_image_generator()
 
     raise ValueError("Unsupported generator provider. Currently supported: openai")
 
@@ -100,12 +101,18 @@ def generate_synergy(
     if results is None:
         results = {}
 
+    with open('results/base_dataset.json', 'r', encoding='utf-8') as f:
+        evaluated_dataset = json.load(f)
+
     image_root = Path(image_dir)
     total = len(dataset)
 
     # Separate already-done samples from those that need inference.
     pending: list[tuple[str, str, Path]] = []  # (sample_id, text, image_path)
     for sample_id, sample in dataset.items():
+        if evaluated_dataset['results'].get(sample_id, {}).get("interaction", "unknown") != "U1":
+            continue
+
         output_path = Path(save_dir) / f"{sample_id}.jpg"
         if os.path.exists(output_path):
             results[sample_id] = str(output_path)
@@ -224,7 +231,7 @@ def parse_args() -> argparse.Namespace:
         "--image-dir",
         type=Path,
         default=Path("img"),
-        help="Directory containing image files referenced by img_name.",
+        help="Directory containing DOCMSU image files referenced by img_name.",
     )
     parser.add_argument(
         "--output",
@@ -234,7 +241,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--provider",
-        choices=["openai"],
+        choices=["openai", "google"],
         default="openai",
         help="Generation model provider.",
     )
@@ -254,7 +261,7 @@ def parse_args() -> argparse.Namespace:
         "--checkpoint-every",
         type=int,
         default=10,
-        help="Save partial results every N sample evaluations (0 disables checkpointing).",
+        help="Save partial results every N sample generations (0 disables checkpointing).",
     )
     parser.add_argument(
         "--max-workers",
@@ -311,8 +318,8 @@ def run_generation(args: argparse.Namespace) -> dict[str, Any]:
             synergy_response,
             checkpoint={
                 "status": "in_progress",
-                "completed_evaluations": completed_steps,
-                "total_evaluations": total_steps,
+                "completed_generations": completed_steps,
+                "total_generations": total_steps,
                 "last_mode": mode,
                 "last_mode_progress": f"{mode_index}/{mode_total}",
             },
@@ -340,8 +347,8 @@ def run_generation(args: argparse.Namespace) -> dict[str, Any]:
             synergy_response,
             checkpoint={
                 "status": "failed",
-                "completed_evaluations": completed_steps,
-                "total_evaluations": total_steps,
+                "completed_generations": completed_steps,
+                "total_generations": total_steps,
                 "error": str(exc),
             },
         )
