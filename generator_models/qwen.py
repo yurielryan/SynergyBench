@@ -80,7 +80,8 @@ class Qwen3VLGeneratorModel(BaseModel):
 		output_text = self.processor.batch_decode(
 			generated_ids_trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False
 		)[0]
-		return str(output_text).strip()
+		# NOTE: The current model is instruct-based model, does not include reasoning
+		return str(output_text).strip(), None
 
 
 def load_qwen3vl_generator(
