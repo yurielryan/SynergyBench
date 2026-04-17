@@ -62,7 +62,8 @@ class GoogleGeneratorModel(BaseModel):
 			"text": self.config.user_prompt.format(text=text or ""),
 		})
 
-		# user_content.append(build_base64_image_content(image)) # this generic help function is implemented in utils.py.
+		if image is not None:
+			user_content.append(build_base64_image_content(image))
 
 		messages.append({"role": "user", "content": user_content})
 		return messages

@@ -93,6 +93,7 @@ def generate_synergy(
     dataset: dict[str, dict[str, Any]],
     image_dir: str | Path,
     save_dir: str | Path,
+    reference: bool | bool,
     results: dict[str, str] | None = None,
     on_progress: ProgressCallback | None = None,
     max_workers: int = 4,
@@ -121,16 +122,19 @@ def generate_synergy(
         text = sample.get("text")
         img_name = sample.get("img_name")
 
-        if not isinstance(text, str) or not text.strip():
-            results[sample_id] = "unknown"
-        elif not isinstance(img_name, str) or not img_name:
-            results[sample_id] = "unknown"
+        if not reference:
+            pending.append((sample_id, text, None))
         else:
-            image_path = image_root / img_name
-            if not image_path.exists():
+            if not isinstance(text, str) or not text.strip():
+                results[sample_id] = "unknown"
+            elif not isinstance(img_name, str) or not img_name:
                 results[sample_id] = "unknown"
             else:
-                pending.append((sample_id, text, image_path))
+                image_path = image_root / img_name
+                if not image_path.exists():
+                    results[sample_id] = "unknown"
+                else:
+                    pending.append((sample_id, text, image_path))
 
     def _infer(sample_id: str, text: str, image_path: Path) -> tuple[str, bytes | None]:
         return sample_id, model.inference(text=text, image=image_path)
@@ -228,6 +232,12 @@ def parse_args() -> argparse.Namespace:
         help="Which split to evaluate when dataset has curated splits.",
     )
     parser.add_argument(
+        "--image-reference",
+        type=bool,
+        default=False,
+        help="Whether to include image references in the output JSON.",
+    )
+    parser.add_argument(
         "--image-dir",
         type=Path,
         default=Path("img"),
@@ -289,6 +299,7 @@ def run_generation(args: argparse.Namespace) -> dict[str, Any]:
         "output": str(args.output),
         "provider": args.provider,
         "generated_image_dir": str(args.generated_image_dir),
+        "image_reference": args.image_reference,
         "limit": args.limit,
         "checkpoint_every": args.checkpoint_every,
         "max_workers": args.max_workers,
@@ -336,6 +347,7 @@ def run_generation(args: argparse.Namespace) -> dict[str, Any]:
             dataset,
             image_dir=args.image_dir,
             save_dir=args.generated_image_dir,
+            reference=args.image_reference,
             results=synergy_response,
             on_progress=checkpoint_callback,
             max_workers=args.max_workers,
