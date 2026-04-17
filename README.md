@@ -88,16 +88,13 @@ SynergyBench/
 - Python 3.10+
 - OpenRouter or OpenAI API key
 
-Python dependencies:
-- `openai` (for OpenAI API backend)
-
 ## 1) Environment Setup
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
 pip install --upgrade pip
-pip install openai
+pip install -r requirements.txt
 ```
 
 Set an API key before running evaluation:
@@ -148,7 +145,60 @@ What this does:
 - creates `train/validation/test` splits in 80/10/10 ratio
 - writes metadata and split counts under `meta`
 
-## 4) Configure Evaluation
+## 4) Configure Synergy Generation
+
+### Text Synergy 
+Text-based synergy generation is configured through CLI flags in `generate.py`.
+
+Default configuration:
+- dataset: `docmsu_2500_split.json`
+- split: `all`
+- image directory: `img`
+- model provider: `openai`
+- reasoning: `none`
+- output path: `responses/synergy_generation.json`
+
+#### Useful CLI Options
+- `--dataset`: path to dataset JSON (raw mapping or curated split JSON)
+- `--split`: one of `all`, `train`, `validation`, `test`
+- `--image-dir`: directory containing image files referenced by `img_name`
+- `--output`: output JSON path
+- `--provider`: generator provider (one of `openai`, `qwen`)
+- `--model-id`: [Only applicable for Qwen] model id for the model to run
+- `--reasoning`: [Only applicable for OpenAI] one of `none`, `minimal`, `low`, `medium`, `high` for reasoning effort 
+- `--limit`: optional sample limit for quick smoke tests
+- `--checkpoint-every`: save partial results every N evaluations
+  (default `250`; `0` disables checkpointing)
+- `--continue-from`: resume from an existing checkpoint at `--output`
+
+### Image Synergy
+Image-based synergy generation is configured through CLI flags in `img_generate.py`.
+
+Default configuration:
+- dataset: `docmsu_2500_split.json`
+- split: `all`
+- image directory: `img`
+- model provider: `openai`
+- image referencing: `False`
+- generated image directory: `generated_images`
+- output path: `responses/img_synergy_generation.json`
+- max workers: `4`
+
+#### Useful CLI Options
+- `--dataset`: path to dataset JSON (raw mapping or curated split JSON)
+- `--split`: one of `all`, `train`, `validation`, `test`
+- `image-reference`: set whether to provide original image as reference before generation
+- `--image-dir`: directory containing image files referenced by `img_name`
+- `--output`: output JSON path
+- `--provider`: generator provider (one of `openai`, `google`)
+- `--generated-image-dir`: path to save generated images
+- `--limit`: optional sample limit for quick smoke tests
+- `--checkpoint-every`: save partial results every N evaluations
+  (default `250`; `0` disables checkpointing)
+- `--continue-from`: resume from an existing checkpoint at `--output`
+- `--max-workers`: number of multithreading workers (NOTE: API calls usually have queries per minute limit, so do not set too much workers)
+
+## 5) Configure Evaluation
 
 Evaluation is configured through CLI flags in `evaluate.py`.
 
@@ -195,7 +245,7 @@ Additional evaluator providers can be added in `evaluator_models/` and wired in 
 
 
 
-## 5) Run Evaluation
+## 6) Run Evaluation
 
 ```bash
 python evaluate.py
@@ -211,7 +261,7 @@ On success, the script writes:
 
 - `results/evaluator_inference.json` (or your custom `--output` path)
 
-## 6) Output Format
+## 7) Output Format
 
 The output JSON contains:
 - a copy of run arguments under `run_config`
@@ -238,7 +288,7 @@ Example shape:
 }
 ```
 
-## 7) Analyze Interactions and Synergy Creation
+## 8) Analyze Interactions and Synergy Creation
 
 Once you have at least a base results JSON (and optionally one or more
 modified-dataset results JSONs), run `analysis.py` to classify each
