@@ -1,7 +1,5 @@
-"""Evaluation pipeline for sarcasm classification with evaluator model backends.
-
-Expected evaluator model interface:
-    model.evaluate(text: str | None, image: str | Path | None) -> str
+"""
+Generation pipeline for text-based synergy generation.
 """
 
 from __future__ import annotations
@@ -82,7 +80,7 @@ def init_generator_model(
     if provider_name == "openai":
         return load_openai_generator(reasoning=args.reasoning)
     if provider_name == "qwen":
-        return load_qwen3vl_generator()
+        return load_qwen3vl_generator(model_id=args.model_id)
 
     raise ValueError("Unsupported generator provider. Currently supported: openai, qwen[local]")
 
@@ -100,11 +98,19 @@ def generate_synergy(
     if results is None:
         results = {}
 
+    with open('results/base_dataset.json', 'r', encoding='utf-8') as f:
+        evaluated_dataset = json.load(f)
+
     image_root = Path(image_dir)
     total = len(dataset)
 
     for index, (sample_id, sample) in tqdm(enumerate(dataset.items(), start=1), total=total, desc="Generating synergy"):
         if index <= len(results):
+            continue
+        if evaluated_dataset['results'].get(sample_id, {}).get("interaction", "unknown") != "U2":
+            # while skipped, still save
+            if on_progress is not None:
+                on_progress("synergy generation", index, total)
             continue
         text = sample.get("text")
         img_name = sample.get("img_name")
@@ -137,6 +143,9 @@ def aggregate_response(
     output: dict[str, dict[str, Any]] = {}
     for sample_id, sample in dataset.items():
         synergy_generation = synergy_response.get(sample_id, "unknown")
+        # if this sample_id is not yet inferred, do not save it.
+        if synergy_generation == "unknown":
+            continue
         output[sample_id] = {
             "sample_id": sample_id,
             "context": synergy_generation.get("context", "unknown") if isinstance(synergy_generation, dict) else "unknown",
@@ -203,6 +212,12 @@ def parse_args() -> argparse.Namespace:
         help="Evaluator model provider.",
     )
     parser.add_argument(
+        "--model-id",
+        type=str,
+        default="Qwen/Qwen3-VL-30B-A3B-Instruct",
+        help="Model ID or name to use for generation (if applicable for the provider).",
+    )
+    parser.add_argument(
         "--reasoning",
         choices=['none', 'minimal', 'low', 'medium', 'high'],
         default='none',
@@ -218,7 +233,7 @@ def parse_args() -> argparse.Namespace:
         "--checkpoint-every",
         type=int,
         default=250,
-        help="Save partial results every N sample evaluations (0 disables checkpointing).",
+        help="Save partial results every N sample generations (0 disables checkpointing).",
     )
     parser.add_argument(
         "--continue-from",
@@ -245,6 +260,7 @@ def run_generation(args: argparse.Namespace) -> dict[str, Any]:
         "image_dir": str(args.image_dir),
         "output": str(args.output),
         "provider": args.provider,
+        "model_id": args.model_id,
         "reasoning": args.reasoning,
         "limit": args.limit,
         "checkpoint_every": args.checkpoint_every,
@@ -287,8 +303,8 @@ def run_generation(args: argparse.Namespace) -> dict[str, Any]:
             synergy_response,
             checkpoint={
                 "status": "in_progress",
-                "completed_evaluations": completed_steps,
-                "total_evaluations": total_steps,
+                "completed_generations": completed_steps,
+                "total_generations": total_steps,
                 "last_mode": mode,
                 "last_mode_progress": f"{mode_index}/{mode_total}",
             },
@@ -314,8 +330,8 @@ def run_generation(args: argparse.Namespace) -> dict[str, Any]:
             synergy_response,
             checkpoint={
                 "status": "failed",
-                "completed_evaluations": completed_steps,
-                "total_evaluations": total_steps,
+                "completed_generations": completed_steps,
+                "total_generations": total_steps,
                 "error": str(exc),
             },
         )

@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import os
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 import torch
-from transformers import Qwen3VLForConditionalGeneration, AutoProcessor
+from transformers import Qwen3VLForConditionalGeneration, Qwen3VLMoeForConditionalGeneration, AutoProcessor
 
 from .base_model_generative import BaseModel, BaseModelConfig
 from .utils import build_base64_image_content
@@ -25,11 +26,18 @@ class Qwen3VLGeneratorModel(BaseModel):
 	config: Qwen3VLModelConfig
 
 	def load_model(self) -> Any:
-		model = Qwen3VLForConditionalGeneration.from_pretrained(
-			self.config.model_id, 
-			dtype=torch.bfloat16, 
-			device_map="cuda:0" if torch.cuda.is_available() else "cpu"
-		)
+		if re.search(r'A\d+B', self.config.model_id):
+			model = Qwen3VLMoeForConditionalGeneration.from_pretrained(
+				self.config.model_id, 
+				dtype=torch.bfloat16, 
+				device_map="auto"
+			)
+		else:
+			model = Qwen3VLForConditionalGeneration.from_pretrained(
+				self.config.model_id, 
+				dtype=torch.bfloat16, 
+				device_map="cuda:0" if torch.cuda.is_available() else "cpu"
+			)
 		
 		self.processor = AutoProcessor.from_pretrained(self.config.model_id)
 		return model
