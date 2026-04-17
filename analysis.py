@@ -82,21 +82,26 @@ def s_created(base_path=INPUT_PATH, modified_paths=MODIFIED_PATHS):
     base_total = len(base_results)
     base_syn = sum(1 for s in base_results.values() if classify(s) == "S") # count the number of synergistic samples in the unmod data.
     s_base = base_syn / base_total if base_total else 0.0 # express s_base as a fraction
-    print(f"S_base = {s_base:.4f}  ({base_syn}/{base_total})")
+    print(f"S_base = {s_base*100:.2f}%  ({base_syn}/{base_total})")
 
     scores = {}
     for name, path in modified_paths.items():
         mod_results = _load_results(path)
-        mod_total = len(mod_results)
-        mod_syn = sum(1 for s in mod_results.values() if classify(s) == "S")
-        s_mod = mod_syn / mod_total if mod_total else 0.0
+        # Count base-U2 samples that became synergistic after the modification —
+        # i.e. synergy newly created by the text modification.
+        converted = sum(
+            1 for sid, base_sample in base_results.items()
+            if classify(base_sample) == "U2"
+            and sid in mod_results
+            and classify(mod_results[sid]) == "S"
+        )
 
-        delta = s_mod - s_base
+        delta = converted / base_total if base_total else 0.0
         denom = 1 - s_base
-        score = max(0.0, delta) / denom if denom > 0 else 0.0
-        print(f"[{name}] S_mod = {s_mod:.4f}  ({mod_syn}/{mod_total})  "
-              f"ΔS = {delta:+.4f}  S_created = {score:.4f}")
-        scores[name] = {"s_mod": s_mod, "delta": delta, "s_created": score}
+        score = delta / denom if denom > 0 else 0.0
+        print(f"[{name}] converted->S = {converted}/{base_total}  "
+              f"ΔS = {delta*100:+.2f}%  S_created = {score*100:.2f}%")
+        scores[name] = {"converted": converted, "delta": delta, "s_created": score}
 
     return {"s_base": s_base, "modified": scores}
 

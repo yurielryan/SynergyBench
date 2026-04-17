@@ -260,7 +260,7 @@ def _render_text_modification(ax1, ax2):
     ax1.spines["top"].set_visible(False)
     ax1.spines["right"].set_visible(False)
     ax1.tick_params(length=3)
-    ax1.set_title(f"6(a) Outcomes after text modification  (n = {n_u2})",
+    ax1.set_title(f"(a) Outcomes after text modification  (n = {n_u2})",
                   fontsize=10, pad=8, loc="left")
     ax1.legend(loc="upper center", bbox_to_anchor=(0.5, -0.22),
                ncol=3, frameon=False, fontsize=9, handlelength=1.2,
@@ -300,7 +300,7 @@ def _render_text_modification(ax1, ax2):
     ax2.spines["top"].set_visible(False)
     ax2.spines["right"].set_visible(False)
     ax2.tick_params(length=3)
-    ax2.set_title("6(b) Dataset-wide Synergy",
+    ax2.set_title("(b) Dataset-wide Synergy",
                   fontsize=10, pad=8, loc="left")
     ax2.legend(loc="upper center", bbox_to_anchor=(0.5, -0.22),
                ncol=2, frameon=False, fontsize=9,

@@ -391,6 +391,22 @@ def parse_args() -> argparse.Namespace:
             "Defaults to --text-results-from when omitted."
         ),
     )
+    parser.add_argument(
+        "--merge-from",
+        type=Path,
+        default=None,
+        help=(
+            "Optional path to a prior results JSON. After evaluation, any sample "
+            "in that file but not in the (possibly filtered) evaluated dataset is "
+            "copied into the final output, so you end up with a full-coverage file."
+        ),
+    )
+    parser.add_argument(
+        "--preset",
+        choices=["modify_r_eval"],
+        default=None,
+        help="Run a named preset workflow instead of the default evaluation.",
+    )
     return parser.parse_args()
 
 
@@ -436,6 +452,25 @@ def filter_by_interaction(
         if isinstance(entry, dict) and entry.get("interaction") in labels:
             keep[sample_id] = sample
     return keep
+
+
+def merge_untouched_samples(
+    results: dict[str, dict[str, Any]],
+    base_path: Path,
+    evaluated_sample_ids: set[str],
+) -> dict[str, dict[str, Any]]:
+    """Copy samples from base_path into results for IDs not in evaluated_sample_ids."""
+    with base_path.open("r", encoding="utf-8") as f:
+        base = json.load(f)
+
+    merged = dict(results)
+    added = 0
+    for sample_id, entry in base.get("results", {}).items():
+        if sample_id not in evaluated_sample_ids:
+            merged[sample_id] = entry
+            added += 1
+    print(f"[merge] Added {added} untouched samples from {base_path} to output.")
+    return merged
 
 
 def apply_text_override(
@@ -660,11 +695,73 @@ def run_evaluation(args: argparse.Namespace) -> dict[str, Any]:
         image_results,
         multimodal_results,
     )
+
+    if args.merge_from is not None:
+        final_results["results"] = merge_untouched_samples(
+            final_results["results"],
+            args.merge_from,
+            set(dataset.keys()),
+        )
+
     return final_results
+
+
+def modify_r_eval(
+    text_override: Path = Path("generated_text/gpt-5.4_none.json"),
+    base_results: Path = Path("results/base_dataset.json"),
+    dataset_path: Path = Path("docmsu_2500_split.json"),
+    image_dir: Path = Path("img"),
+    output: Path = Path("results/R_mod_eval.json"),
+    resume: bool = False,
+    checkpoint_every: int = 250,
+) -> dict[str, Any]:
+    """Re-evaluate the 'R' interaction samples from base_results with overridden text.
+
+    - Text is sourced from text_override (synergy_context/context field).
+    - Images come from image_dir (base /img by default).
+    - Only text_only and multimodal modes are run; image_only is reused from base.
+    - Non-R samples are copied verbatim from base_results so the output covers
+      all samples in the base file.
+    """
+    args = argparse.Namespace(
+        dataset=dataset_path,
+        split="all",
+        image_dir=image_dir,
+        output=output,
+        provider="openai",
+        limit=0,
+        checkpoint_every=checkpoint_every,
+        resume=resume,
+        text_override=text_override,
+        modes="text_only,multimodal",
+        image_results_from=base_results,
+        text_results_from=None,
+        filter_interactions="R",
+        interaction_source=base_results,
+        merge_from=base_results,
+        preset="modify_r_eval",
+    )
+    return run_evaluation(args)
 
 
 def main() -> None:
     args = parse_args()
+    if args.preset == "modify_r_eval":
+        # If the user didn't pass --output, fall back to the preset's default.
+        output = args.output
+        if output == Path("results/evaluator_inference.json"):
+            output = Path("results/R_mod_eval.json")
+        final_results = modify_r_eval(
+            dataset_path=args.dataset,
+            image_dir=args.image_dir,
+            output=output,
+            resume=args.resume,
+            checkpoint_every=args.checkpoint_every,
+        )
+        write_results(final_results, output)
+        print(f"Saved {len(final_results['results'])} results to {output}")
+        return
+
     final_results = run_evaluation(args)
     write_results(final_results, args.output)
     print(f"Saved {len(final_results['results'])} results to {args.output}")
