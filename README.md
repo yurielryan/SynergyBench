@@ -70,10 +70,13 @@ Please follow DocMSU's license and usage terms when downloading and redistributi
 SynergyBench/
 ├── evaluate.py                         # Main evaluation script
 ├── analysis.py                         # Interaction classification + synergy metrics
-├── curate_dataset.py                   # Split curation - train/val/test
-├── docmsu_all.json                     # Base dataset
-├── docmsu_2500_split.json              # Curated balanced split file
-├── img/
+├── prepare_docmsu.py                   # Builds docmsu_10000_split.json + prunes img/
+├── docmsu_10000_split.json             # Curated 10k split (70/15/15 train/val/test, class-balanced)
+├── archive/
+│   ├── docmsu_all.json                 # Full DocMSU records (71,828 samples)
+│   ├── docmsu_2500_split.json          # Previous 2,500-sample split (historical)
+│   └── curate_dataset.py               # Legacy curation script (superseded by prepare_docmsu.py)
+├── img/                                # Pruned to the ~10k images referenced by the curated split
 ├── results/                            # Evaluation outputs + checkpoints
 ├── evaluator_models/
 │   ├── base_model_evaluation.py        # Abstract evaluator interface
@@ -112,7 +115,7 @@ Alternatively, set your api key in a .env file with the same names variable name
 1. Download DocMSU assets from:
    - https://github.com/fesvhtr/DocMSU
 2. Place the JSON and images so this repo has:
-   - `docmsu_all.json`
+   - `archive/docmsu_all.json`
    - `img/` containing image files like `technology_00727.jpg`
 
 Expected sample schema in `docmsu_all.json`:
@@ -128,22 +131,66 @@ Expected sample schema in `docmsu_all.json`:
 }
 ```
 
-## 3) Recreate the Curated 2500-Sample Split
+## 3) Build the Curated 10,000-Sample Split
 
-To regenerate the balanced deterministic split used in this repo:
+`prepare_docmsu.py` builds the balanced split used by the rest of the pipeline
+and (optionally) prunes `img/` down to just the images the split references.
 
 ```bash
-python curate_dataset.py \
-  --input docmsu_all.json \
-  --output docmsu_2500_split.json \
-  --seed 20260311
+# 1. Build docmsu_10000_split.json and preview how many images would be pruned.
+python prepare_docmsu.py
+
+# 2. After reviewing the dry-run output, actually delete unreferenced images.
+python prepare_docmsu.py --prune-images
 ```
 
 What this does:
-- samples exactly 2500 items
-- enforces 1250 non-sarcastic (`is_sar=0`) and 1250 sarcastic (`is_sar=1`)
-- creates `train/validation/test` splits in 80/10/10 ratio
-- writes metadata and split counts under `meta`
+- samples exactly 10,000 items from `archive/docmsu_all.json`
+- enforces 5,000 non-sarcastic (`is_sar=0`) and 5,000 sarcastic (`is_sar=1`)
+- assigns each sample a `split` field — 70% train, 15% validation, 15% test
+  — with each split internally class-balanced (3,500/750/750 per class)
+- writes `docmsu_10000_split.json` with every original field preserved plus
+  the new `split` key
+- verifies class balance before touching `img/`; aborts if the check fails
+- (only with `--prune-images`) deletes any file in `img/` whose name is not
+  referenced by the split; the first run without the flag is a safe dry run
+  that just reports the counts
+
+Output schema:
+
+```json
+{
+  "meta": {
+    "source_file": "docmsu_all.json",
+    "seed": 20260424,
+    "total_samples": 10000,
+    "class_balance": {"is_sar_0": 5000, "is_sar_1": 5000},
+    "split_counts": {"train": 7000, "validation": 1500, "test": 1500},
+    "split_class_balance": {
+      "train": {"is_sar_0": 3500, "is_sar_1": 3500},
+      "validation": {"is_sar_0": 750, "is_sar_1": 750},
+      "test": {"is_sar_0": 750, "is_sar_1": 750}
+    },
+    "split_fractions": {"train": 0.7, "validation": 0.15, "test": 0.15}
+  },
+  "samples": {
+    "technology_00727": {
+      "is_sar": 0,
+      "text": "...",
+      "img_name": "technology_00727.jpg",
+      "type": "technology",
+      "split": "train"
+    }
+  }
+}
+```
+
+> **Migration note.** The file format changed from the previous
+> `docmsu_2500_split.json` (nested `splits.{train,validation,test}` dicts) to
+> a flat `samples` dict with a per-record `split` key. Downstream scripts that
+> still default to `docmsu_2500_split.json` need their `--dataset` flag set
+> explicitly and may need their split-reading logic updated to look at the
+> `split` field rather than the old nested structure.
 
 ## 4) Configure Synergy Generation
 
@@ -151,7 +198,7 @@ What this does:
 Text-based synergy generation is configured through CLI flags in `generate.py`.
 
 Default configuration:
-- dataset: `docmsu_2500_split.json`
+- dataset: `docmsu_10000_split.json` (pass via `--dataset`; script defaults still point at the legacy 2,500 file)
 - split: `all`
 - image directory: `img`
 - model provider: `openai`
@@ -175,7 +222,7 @@ Default configuration:
 Image-based synergy generation is configured through CLI flags in `img_generate.py`.
 
 Default configuration:
-- dataset: `docmsu_2500_split.json`
+- dataset: `docmsu_10000_split.json` (pass via `--dataset`; script defaults still point at the legacy 2,500 file)
 - split: `all`
 - image directory: `img`
 - model provider: `openai`
@@ -204,7 +251,7 @@ Evaluation is configured through CLI flags in `evaluate.py`.
 
 Default configuration:
 - model provider: `openai`
-- dataset: `docmsu_2500_split.json`
+- dataset: `docmsu_10000_split.json` (pass via `--dataset`; script defaults still point at the legacy 2,500 file)
 - split: `all`
 - image directory: `img`
 - output path: `results/evaluator_inference.json`
@@ -343,8 +390,9 @@ Typical workflow:
 
 ## Reproducibility Notes
 
-- Split generation is deterministic with the fixed seed (`20260311`).
-- The curation script sorts IDs before shuffling to stabilize behavior across JSON key orders.
+- Split generation is deterministic with the fixed seed (`20260424`, overridable via `--seed`).
+- `prepare_docmsu.py` sorts IDs before shuffling to stabilize behavior across JSON key orders.
+- The legacy `archive/curate_dataset.py` (seed `20260311`, 2,500 samples, 80/10/10) is kept under `archive/` for historical reproduction only.
 - For strict reproducibility across machines, pin package versions and record the exact model revision from Hugging Face.
 
 ## Troubleshooting
