@@ -60,7 +60,7 @@ class OpenAIGeneratorModel(BaseModel):
         # 2) add user message
 		user_content: list[dict[str, Any]] = []
 		user_content.append({
-			"type": "text",
+			"type": "input_text",
 			"text": self.config.user_prompt.format(text=text or ""),
 		})
 
@@ -75,25 +75,22 @@ class OpenAIGeneratorModel(BaseModel):
 	) -> Any:
 		request_kwargs: dict[str, Any] = {
 			"model": self.config.model_id,
-			"messages": messages,
-			"max_tokens": self.config.max_new_tokens,
-			"temperature": self.config.temperature,
-		}
-		# On this route, reasoning cannot be disabled; use low effort to keep overhead down.
-		# see https://openrouter.ai/docs/guides/best-practices/reasoning-tokens
-		request_kwargs["extra_body"] = {
+			"input": messages,
+			"max_output_tokens": self.config.max_new_tokens,
+			"temperature": 1,
 			"reasoning": {
 				"effort": self.config.reasoning,
+				"summary": "detailed",
 			},
 		}
 
 		if self.config.reasoning in ['medium', 'high']:
-			request_kwargs["max_tokens"] = max(self.config.max_new_tokens, 2048) # minimum 2048 tokens for reasoning to avoid out-of-budget errors.
-			print(f"Reasoning enabled with effort '{self.config.reasoning}', setting max_tokens to {request_kwargs['max_tokens']} to ensure sufficient tokens for reasoning output.")
+			request_kwargs["max_output_tokens"] = max(self.config.max_new_tokens, 2048) # minimum 2048 tokens for reasoning to avoid out-of-budget errors.
+			print(f"Reasoning enabled with effort '{self.config.reasoning}', setting max_tokens to {request_kwargs['max_output_tokens']} to ensure sufficient tokens for reasoning output.")
 
-		response = self.model.chat.completions.create(**request_kwargs)
-
-		choices = getattr(response, "choices", None)
+		response = self.model.responses.create(**request_kwargs)
+		print(response)
+		choices = getattr(response, "output", None)
 		if not choices:
 			error_payload: Any = None
 			if hasattr(response, "model_dump"):
@@ -110,24 +107,26 @@ class OpenAIGeneratorModel(BaseModel):
 		messages = self._build_messages(text=text, image=image)
 		response = self._create_chat_completion(messages=messages)
 
-		message = response.choices[0].message
-		content = getattr(message, "content", None)
-		reasoning = getattr(message, "reasoning", None)
+		# message = response.choices[0].message
+		message = response.output[1].content[0].text
+		output = getattr(response, "output", None)
+
+		for out in output:
+			print(out)
+			if out.type == "reasoning":
+				reasoning = out.content
+			elif out.type == "message":
+				content = out.content
+			else:
+				raise RuntimeError(f"Unexpected output type in response: {out.type}")
 
 		if content is None:
 			content = ""
-		elif isinstance(content, str):
-			content = content.strip()
 		else:
-			content = str(content).strip()
+			content = content[0].text.strip()
 
-		if reasoning is None:
-			reasoning = None
-		elif isinstance(reasoning, str):
-			reasoning = reasoning.strip()
-		else:
-			reasoning = str(reasoning).strip()
-
+		if reasoning is not None:
+			reasoning = reasoning[0].text.strip()
 		return content, reasoning
 
 def load_openai_generator(
@@ -136,7 +135,7 @@ def load_openai_generator(
 	base_url: str = "https://openrouter.ai/api/v1",
 	max_new_tokens: int = 1024,
 	reasoning: str = "none",
-	temperature: float = 1e-5,
+	temperature: float = 1, # Any values other than 1 will encounter error
 	timeout: float = 60.0,
 ) -> OpenAIGeneratorModel:
 	"""Convenience loader used by config-driven pipelines."""

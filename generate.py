@@ -10,7 +10,7 @@ import json
 from pathlib import Path
 from typing import Any, Callable
 
-from generator_models.openai import load_openai_generator, OpenAIModelConfig
+from generator_models.openai import load_openai_generator
 from generator_models.qwen import load_qwen3vl_generator
 from dotenv import load_dotenv
 from tqdm import tqdm
@@ -78,7 +78,12 @@ def init_generator_model(
 
     provider_name = args.provider.lower()
     if provider_name == "openai":
-        return load_openai_generator(reasoning=args.reasoning)
+        return load_openai_generator(
+            model_id=args.model_id,
+            api_key=os.getenv("AZURE_API_KEY"), 
+            base_url=os.getenv("AZURE_ENDPOINT"), 
+            reasoning=args.reasoning
+        )
     if provider_name == "qwen":
         return load_qwen3vl_generator(model_id=args.model_id)
 
@@ -214,7 +219,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--model-id",
         type=str,
-        default="Qwen/Qwen3-VL-30B-A3B-Instruct",
+        default="openai/gpt-5.4-mini",
         help="Model ID or name to use for generation (if applicable for the provider).",
     )
     parser.add_argument(
