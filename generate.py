@@ -185,11 +185,11 @@ def write_results(results: dict[str, Any], output_path: str | Path) -> None:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run evaluator-based sarcasm inference.")
+    parser = argparse.ArgumentParser(description="Run generation.")
     parser.add_argument(
         "--dataset",
         type=Path,
-        default=Path("docmsu_2500_split.json"),
+        default=Path("docmsu_10000_split.json"),
         help="Path to dataset JSON (raw mapping or curated split JSON).",
     )
     parser.add_argument(

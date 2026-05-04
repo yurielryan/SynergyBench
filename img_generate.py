@@ -258,7 +258,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--generated-image-dir",
         type=Path,
-        default=Path('generated_images'),
+        default=Path('responses/img'),
         help="Directory to save generated images.",
     )
     parser.add_argument(

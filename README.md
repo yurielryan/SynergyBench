@@ -69,14 +69,19 @@ Please follow DocMSU's license and usage terms when downloading and redistributi
 ```text
 SynergyBench/
 ├── evaluate.py                         # Main evaluation script
+├── generate.py                         # Main generation script
+├── img_generate.py                     # Main image generation script
 ├── analysis.py                         # Interaction classification + synergy metrics
 ├── prepare_docmsu.py                   # Builds docmsu_10000_split.json + prunes img/
 ├── docmsu_10000_split.json             # Curated 10k split (70/15/15 train/val/test, class-balanced)
 ├── archive/
 │   ├── docmsu_all.json                 # Full DocMSU records (71,828 samples)
 │   ├── docmsu_2500_split.json          # Previous 2,500-sample split (historical)
-│   └── curate_dataset.py               # Legacy curation script (superseded by prepare_docmsu.py)
+│   ├── curate_dataset.py               # Legacy curation script (superseded by prepare_docmsu.py)
+│   └── generated_text/                 # Old path
 ├── img/                                # Pruned to the ~10k images referenced by the curated split
+├── responses/                          # Generation outputs
+│   └── img.py                          # Generated image outputs
 ├── results/                            # Evaluation outputs + checkpoints
 ├── evaluator_models/
 │   ├── base_model_evaluation.py        # Abstract evaluator interface

@@ -6,8 +6,10 @@ Expected evaluator model interface:
 
 from __future__ import annotations
 
+import os
 import argparse
 import json
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any, Callable
 
@@ -40,32 +42,11 @@ def select_dataset_samples(
     
     NOTE: This "meta" field simply contains the metadata. See docmsu_2500_split.json.
     """
-    if "splits" not in dataset_json: # assume raw
+    if "samples" not in dataset_json: # assume raw
         return dataset_json
 
-    splits = dataset_json.get("splits", {}) # available splits: train, validation, test
-    split_name = split.lower()
-    
-    if not isinstance(splits, dict):
-        raise ValueError("If present, 'splits' must be a mapping.")
-
-    if split_name == "all": # default case for evaluating synergy creation.
-        merged: dict[str, dict[str, Any]] = {}
-        for key in ("train", "validation", "test"): # we assume the dataset will always have these three splits, even if some are empty.
-            split_map = splits.get(key, {})
-            if isinstance(split_map, dict):
-                merged.update(split_map)
-        if merged:
-            return merged
-
-    elif split_name in {"train", "validation", "test"}: # in case we need to separately train/validate then test later on.
-        selected = splits.get(split_name, {})
-        if not isinstance(selected, dict):
-            raise ValueError(f"Split '{split_name}' must be a mapping.")
-        return selected
-    
-    else:
-        raise ValueError("split must be one of: all, train, validation, test")
+    samples = dataset_json.get("samples", {}) # available splits: train, validation, test
+    return samples
 
 
 def init_evaluator_model(
@@ -75,13 +56,19 @@ def init_evaluator_model(
 
     provider_name = provider.lower()
     if provider_name == "openai":
-        return load_openai_evaluator()
+        return load_openai_evaluator(
+            model_id="gpt-5.4-mini",
+            api_key=os.getenv("AZURE_API_KEY"), 
+            base_url=os.getenv("AZURE_ENDPOINT"), 
+        )
 
     raise ValueError("Unsupported evaluator provider. Currently supported: openai")
 
 
 ProgressCallback = Callable[[str, int, int], None]
 
+def _infer(model: Any, text: str, image_path: Path) -> tuple[str, bytes | None]:
+    return model.evaluate(text=text, image=image_path)
 
 def evaluate_text(
     model: Any,
@@ -94,6 +81,7 @@ def evaluate_text(
         results = {}
 
     total = len(dataset)
+    pending: list[tuple[str, str, Path]] = []  # (sample_id, text, image_path)
     for index, (sample_id, sample) in enumerate(dataset.items(), start=1):
         if sample_id in results:
             if on_progress is not None:
@@ -104,15 +92,27 @@ def evaluate_text(
         if not isinstance(text, str) or not text.strip():
             results[sample_id] = "unknown"
         else:
+            pending.append((sample_id, text, None))
+
+    completed_count = total - len(pending)
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        future_to_sample = {
+            executor.submit(_infer, model, text, None): sample_id
+            for sample_id, text, _ in pending
+        }
+        for future in as_completed(future_to_sample):
+            sample_id = future_to_sample[future]
             try:
-                raw_output = model.evaluate(text=text, image=None)
+                raw_output = future.result()
                 results[sample_id] = parse_yes_no_prediction(raw_output)
             except Exception as exc:
                 print(f"[error] text_only sample {sample_id}: {exc}")
                 results[sample_id] = "unknown"
+            completed_count += 1
 
-        if on_progress is not None:
-            on_progress("text_only", index, total)
+            if on_progress is not None:
+                on_progress("text_only", completed_count, total)
 
     return results
 
@@ -131,6 +131,7 @@ def evaluate_image(
     image_root = Path(image_dir)
     total = len(dataset)
 
+    pending: list[tuple[str, str, Path]] = []  # (sample_id, text, image_path)
     for index, (sample_id, sample) in enumerate(dataset.items(), start=1):
         if sample_id in results:
             if on_progress is not None:
@@ -142,18 +143,28 @@ def evaluate_image(
             results[sample_id] = "unknown"
         else:
             image_path = image_root / img_name
-            if not image_path.exists():
-                results[sample_id] = "unknown"
-            else:
-                try:
-                    raw_output = model.evaluate(text=None, image=image_path)
-                    results[sample_id] = parse_yes_no_prediction(raw_output)
-                except Exception as exc:
-                    print(f"[error] image_only sample {sample_id}: {exc}")
-                    results[sample_id] = "unknown"
+            pending.append((sample_id, None, image_path))
 
-        if on_progress is not None:
-            on_progress("image_only", index, total)
+    completed_count = total - len(pending)
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        future_to_sample = {
+            executor.submit(_infer, model, None, image_path): sample_id
+            for sample_id, _, image_path in pending
+        }
+        for future in as_completed(future_to_sample):
+            sample_id = future_to_sample[future]
+            try:
+                raw_output = future.result()
+                results[sample_id] = parse_yes_no_prediction(raw_output)
+            except Exception as exc:
+                print(f"[error] image_only sample {sample_id}: {exc}")
+
+                results[sample_id] = "unknown"
+            completed_count += 1
+
+            if on_progress is not None:
+                on_progress("image_only", completed_count, total)
 
     return results
 
@@ -172,6 +183,7 @@ def evaluate_multimodal(
     image_root = Path(image_dir)
     total = len(dataset)
 
+    pending: list[tuple[str, str, Path]] = []  # (sample_id, text, image_path)
     for index, (sample_id, sample) in enumerate(dataset.items(), start=1):
         if sample_id in results:
             if on_progress is not None:
@@ -190,15 +202,26 @@ def evaluate_multimodal(
             if not image_path.exists():
                 results[sample_id] = "unknown"
             else:
-                try:
-                    raw_output = model.evaluate(text=text, image=image_path)
-                    results[sample_id] = parse_yes_no_prediction(raw_output)
-                except Exception as exc:
-                    print(f"[error] multimodal sample {sample_id}: {exc}")
-                    results[sample_id] = "unknown"
+                pending.append((sample_id, text, image_path))
 
-        if on_progress is not None:
-            on_progress("multimodal", index, total)
+    completed_count = total - len(pending)
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        future_to_sample = {
+            executor.submit(_infer, model, text, image_path): sample_id
+            for sample_id, text, image_path in pending
+        }
+        for future in as_completed(future_to_sample):
+            sample_id = future_to_sample[future]
+            try:
+                raw_output = future.result()
+                results[sample_id] = parse_yes_no_prediction(raw_output)
+            except Exception as exc:
+                print(f"[error] multimodal sample {sample_id}: {exc}")
+                results[sample_id] = "unknown"
+            completed_count += 1
+
+            if on_progress is not None:
+                on_progress("multimodal", completed_count, total)
 
     return results
 
@@ -288,7 +311,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--dataset",
         type=Path,
-        default=Path("docmsu_2500_split.json"),
+        default=Path("docmsu_10000_split.json"),
         help="Path to dataset JSON (raw mapping or curated split JSON).",
     )
     parser.add_argument(
@@ -709,7 +732,7 @@ def run_evaluation(args: argparse.Namespace) -> dict[str, Any]:
 def modify_r_eval(
     text_override: Path = Path("generated_text/gpt-5.4_none.json"),
     base_results: Path = Path("results/base_dataset.json"),
-    dataset_path: Path = Path("docmsu_2500_split.json"),
+    dataset_path: Path = Path("docmsu_10000_split.json"),
     image_dir: Path = Path("img"),
     output: Path = Path("results/R_mod_eval.json"),
     resume: bool = False,

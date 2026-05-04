@@ -65,7 +65,7 @@ class OpenAIEvaluatorModel(BaseModel):
         # 2b) have image
 		user_content: list[dict[str, Any]] = []
 		if text is not None:
-			user_content.append({"type": "text", "text": text,})
+			user_content.append({"type": "input_text", "text": text,})
 
 		user_content.append(build_base64_image_content(image)) # this generic help function is implemented in utils.py.
 
@@ -78,21 +78,17 @@ class OpenAIEvaluatorModel(BaseModel):
 	) -> Any:
 		request_kwargs: dict[str, Any] = {
 			"model": self.config.model_id,
-			"messages": messages,
-			"max_tokens": self.config.max_new_tokens,
-			"temperature": self.config.temperature,
-		}
-		# On this route, reasoning cannot be disabled; use low effort to keep overhead down.
-		# see https://openrouter.ai/docs/guides/best-practices/reasoning-tokens
-		request_kwargs["extra_body"] = {
+			"input": messages,
+			"max_output_tokens": self.config.max_new_tokens,
+			"temperature": 1,
 			"reasoning": {
-				"effort": "low", # btw, docs for openrouter reasoning tokens are outdated - gpt5 mini cannot use "none", and cannot exclude for reasoning.
-				"exclude": True,
+				"effort": "none",
+				"summary": "auto",
 			},
 		}
 
 		try:
-			response = self.model.chat.completions.create(**request_kwargs)
+			response = self.model.responses.create(**request_kwargs)
 		except APIStatusError as exc:
 			# Surface upstream error body (OpenRouter/provider returns JSON with
 			# the real reason: moderation flag, data policy, rate limit, etc.).
@@ -108,7 +104,7 @@ class OpenAIEvaluatorModel(BaseModel):
 			)
 			raise
 
-		choices = getattr(response, "choices", None)
+		choices = getattr(response, "output", None)
 		if not choices:
 			error_payload: Any = None
 			if hasattr(response, "model_dump"):
@@ -125,24 +121,17 @@ class OpenAIEvaluatorModel(BaseModel):
 		messages = self._build_messages(text=text, image=image)
 		response = self._create_chat_completion(messages=messages)
 
-		message = response.choices[0].message
-		content = getattr(message, "content", "")
+		output = getattr(response, "output", "")
+		for out in output:
+			if out.type == "message":
+				content = out.content
+
 		if content is None:
-			return ""
+			content = ""
+		else:
+			content = content[0].text.strip()
 
-		if isinstance(content, str):
-			return content.strip()
-
-		if isinstance(content, list): # handling multiple content parts
-			chunks: list[str] = []
-			for part in content:
-				if isinstance(part, dict):
-					text_value = part.get("text")
-					if isinstance(text_value, str):
-						chunks.append(text_value)
-			return " ".join(chunks).strip()
-
-		return str(content).strip()
+		return content
 
 
 def load_openai_evaluator(

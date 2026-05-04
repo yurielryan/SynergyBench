@@ -89,7 +89,6 @@ class OpenAIGeneratorModel(BaseModel):
 			print(f"Reasoning enabled with effort '{self.config.reasoning}', setting max_tokens to {request_kwargs['max_output_tokens']} to ensure sufficient tokens for reasoning output.")
 
 		response = self.model.responses.create(**request_kwargs)
-		print(response)
 		choices = getattr(response, "output", None)
 		if not choices:
 			error_payload: Any = None
@@ -107,8 +106,6 @@ class OpenAIGeneratorModel(BaseModel):
 		messages = self._build_messages(text=text, image=image)
 		response = self._create_chat_completion(messages=messages)
 
-		# message = response.choices[0].message
-		message = response.output[1].content[0].text
 		output = getattr(response, "output", None)
 
 		for out in output:

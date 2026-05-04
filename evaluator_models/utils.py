@@ -30,10 +30,8 @@ def encode_image_to_data_url(image_path: str | Path) -> str:
 def build_base64_image_content(image_path: str | Path) -> dict[str, Any]:
 	"""Build an OpenAI/OpenRouter image payload using base64-encoded data URL."""
 	return {
-		"type": "image_url",
-		"image_url": {
-			"url": encode_image_to_data_url(image_path),
-		},
+		"type": "input_image",
+		"image_url": encode_image_to_data_url(image_path),
 	}
 
 
